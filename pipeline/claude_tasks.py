@@ -18,9 +18,14 @@ Channel: Malay-language (Bahasa Melayu) AI explainer duo, voxel/pixel-block toy
 style. Naro (green voxel alien) is the curious learner — he asks the
 questions the audience would ask, in Bahasa Melayu. Exa (mint-teal voxel
 robot) is the AI expert — she explains and demos, santai (relaxed, friendly)
-tone, no jargon, short plain-language sentences. Default episode length is a
-2-block script (~20 seconds total), unless the topic needs more (max 4
-blocks)."""
+tone, no jargon, short plain-language sentences.
+
+Episodes are CONVERSATIONS between Naro and Exa. Each block is ONE character
+speaking ONE short line (max ~2 sentences, speakable in 8 seconds) — the
+"speaker" field says who ("naro" or "exa"). Alternate speakers so it feels
+like a real back-and-forth: typically Naro asks or reacts, Exa explains.
+Both characters are visible in every block's scene; the non-speaking one
+listens, nods, or reacts. Default 2-4 blocks (~16-32 seconds)."""
 
 
 def _client() -> anthropic.Anthropic:
@@ -110,8 +115,13 @@ def draft_script(title: str, topic_summary: str) -> list:
         f"Episode title: {title}\n"
         f"Topic summary: {topic_summary}\n\n"
         "Write the script as a JSON array of 1-4 blocks. Each block is an "
-        'object with keys "narration_bm" (Bahasa Melayu narration, 10-350 '
-        'characters), "visual" (shot description), "on_screen_text", "sfx". '
+        'object with keys "speaker" ("naro" or "exa" — who says this line), '
+        '"narration_bm" (that character\'s spoken line in Bahasa Melayu, one '
+        "short line speakable in 8 seconds, 10-350 characters), "
+        '"visual" (shot description: both characters visible, what the '
+        "speaker does, how the listener reacts), "
+        '"on_screen_text" (short keyword text or empty), "sfx". '
+        "Alternate speakers like a conversation. "
         "Respond with ONLY the JSON array, no other text."
     )
 
