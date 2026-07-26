@@ -183,8 +183,20 @@ Slice 1 (this spec):
 5. DAG 2 dry-run end-to-end → one real run: EP00
 
 Slice 2+: TikTok publishing DAG (Higgsfield tiktok tools / CLI), engagement
-metrics DAG, promo gate build-out, dashboard deploy + auth, scheduled research,
-virality-predictor pre-post scoring.
+metrics DAG, promo gate build-out, dashboard deploy + auth (incl. enabling RLS
++ policies on cs_* tables), scheduled research, virality-predictor pre-post
+scoring, and **live trend search for topic research** — upgrade DAG 1's
+`propose_topics` with a `fetch_trends` step feeding real signals into the
+prompt, in priority order:
+1. Web search via the existing Claude CLI backend (`--allowedTools WebSearch`) —
+   zero new infrastructure;
+2. Google Trends with `geo=MY` (pytrends) — Malaysia-specific search interest;
+3. Reddit official API / public JSON (r/artificial, r/LocalLLaMA, r/ChatGPT,
+   top-of-week);
+4. YouTube Data API (recent uploads by views).
+No TikTok/X/Threads scraping: ToS-risky, brittle, and X's API is not worth the
+cost; TikTok-native performance signals come from Higgsfield's Virality
+Predictor instead.
 
 ## 10. Decisions pending (needed during slice 1, not blockers to start)
 
