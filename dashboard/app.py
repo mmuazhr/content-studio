@@ -26,7 +26,13 @@ from pipeline.db import (
 from pipeline.script_schema import ScriptValidationError, validate_script
 
 BASE_DIR = Path(__file__).resolve().parent
-QUEUE_STATUSES = ("pending_script_review", "pending_video_review", "error")
+QUEUE_STATUSES = (
+    "pending_script_review",
+    "script_approved",
+    "generating",
+    "pending_video_review",
+    "error",
+)
 GATES = ("script", "video")
 DECISIONS = ("approve", "reject", "backlog")
 TRIGGERABLE_STATUSES = ("script_approved", "generating")
