@@ -212,11 +212,22 @@ def assemble(sb, ep) -> str:
                      "-shortest", str(base)])
 
         final = outdir / "final.mp4"
-        filters = _text_overlays(ep["script"], work)
-        if filters:
-            _ffmpeg(["-i", str(base), "-vf", filters,
-                     "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                     "-c:a", "copy", str(final)])
+        overlays = _make_overlays(ep["script"], work, _video_size(base))
+        if overlays:
+            args = ["-i", str(base)]
+            for png, _, _ in overlays:
+                args += ["-i", str(png)]
+            chain, prev = [], "0:v"
+            for n, (_, start, end) in enumerate(overlays, 1):
+                out = f"v{n}"
+                chain.append(
+                    f"[{prev}][{n}:v]overlay=0:0:enable='between(t,{start},{end})'[{out}]"
+                )
+                prev = out
+            _ffmpeg(args + ["-filter_complex", ";".join(chain),
+                            "-map", f"[{prev}]", "-map", "0:a?",
+                            "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                            "-c:a", "copy", str(final)])
         else:
             _ffmpeg(["-i", str(base), "-c", "copy", str(final)])
         return f"local:{final}"
@@ -224,26 +235,56 @@ def assemble(sb, ep) -> str:
     return ensure_job(sb, ep["id"], "assembly", submit)
 
 
-def _text_overlays(script: list, work) -> str:
-    """drawtext filters rendering each block's on_screen_text during its time
-    window — crisp overlay text instead of model-baked captions. Voxel-styled:
-    ink text on a translucent cream box, bottom third, TikTok-safe margins."""
-    parts = []
+OVERLAY_FONT = "/System/Library/Fonts/Supplemental/Courier New Bold.ttf"
+
+
+def _video_size(path) -> tuple:
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "v:0",
+         "-show_entries", "stream=width,height", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    ).stdout.strip().split(",")
+    return int(out[0]), int(out[1])
+
+
+def _make_overlays(script: list, work, size: tuple) -> list:
+    """Render each block's on_screen_text as a transparent PNG (voxel style:
+    ink text on a cream box, bottom third) — composited via ffmpeg's core
+    `overlay` filter, since this ffmpeg build lacks drawtext. Returns
+    [(png_path, start_s, end_s)]."""
+    from PIL import Image, ImageDraw, ImageFont
+
+    width, height = size
+    overlays = []
     for i, block in enumerate(script):
         text = (block.get("on_screen_text") or "").strip()
-        # drawtext can't render emoji; keep clean printable text only.
         text = "".join(ch for ch in text if ord(ch) < 0x2190).strip()
         if not text:
             continue
-        textfile = work / f"overlay_{i}.txt"
-        textfile.write_text(text)
-        start, end = i * BLOCK_SECONDS, (i + 1) * BLOCK_SECONDS
-        parts.append(
-            f"drawtext=textfile='{textfile}':font=Helvetica:fontsize=58:"
-            f"fontcolor=0x23283a:box=1:boxcolor=0xf4efe6@0.88:boxborderw=22:"
-            f"x=(w-text_w)/2:y=h*0.76:enable='between(t,{start},{end})'"
+        img = Image.new("RGBA", (width, height), (0, 0, 0, 0))
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.truetype(OVERLAY_FONT, max(30, width // 16))
+        # naive 2-line wrap when too wide for safe margins
+        lines = [text]
+        if draw.textlength(text, font=font) > width * 0.84 and " " in text:
+            mid = len(text) // 2
+            split = text.rfind(" ", 0, mid) if text.rfind(" ", 0, mid) > 0 else text.find(" ", mid)
+            lines = [text[:split].strip(), text[split:].strip()]
+        line_h = font.size + 10
+        box_h = line_h * len(lines) + 36
+        y0 = int(height * 0.74)
+        draw.rounded_rectangle(
+            [int(width * 0.05), y0, int(width * 0.95), y0 + box_h],
+            radius=14, fill=(244, 239, 230, 235), outline=(35, 40, 58, 255), width=4,
         )
-    return ",".join(parts)
+        for n, line in enumerate(lines):
+            tw = draw.textlength(line, font=font)
+            draw.text(((width - tw) / 2, y0 + 18 + n * line_h), line,
+                      font=font, fill=(35, 40, 58, 255))
+        png = work / f"overlay_{i}.png"
+        img.save(png)
+        overlays.append((png, i * BLOCK_SECONDS, (i + 1) * BLOCK_SECONDS))
+    return overlays
 
 
 def _download_asset(url: str, dest) -> None:
