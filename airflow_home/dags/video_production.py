@@ -22,11 +22,8 @@ def _episode_guard(sb, episode_id):
 
 
 def _assembly_asset_url(assembly_job_id: str) -> str:
-    raise NotImplementedError(
-        "Live asset retrieval is unspecified: assemble() returns only the Higgsfield "
-        f"job id ({assembly_job_id}) and no step resolves it to a downloadable URL. "
-        "This must be settled before DRY_RUN=0."
-    )
+    from pipeline.higgsfield_runner import get_job_result
+    return get_job_result(assembly_job_id)["results"]["rawUrl"]
 
 
 def _download(url: str, ep: dict) -> str:

@@ -71,6 +71,23 @@ def test_ensure_job_calls_submit_fn_once_then_reuses_stored_id():
     assert sb.store["cs_episodes"][0]["higgsfield_jobs"]["narration"] == "job-123"
 
 
+def test_get_job_result_dry_run_returns_stub_asset(monkeypatch):
+    monkeypatch.setattr(type(hf.settings), "dry_run", property(lambda self: True))
+    calls = []
+    real_run_cli = hf.run_cli
+
+    def spy(args):
+        calls.append(args)
+        return real_run_cli(args)
+
+    monkeypatch.setattr(hf, "run_cli", spy)
+
+    result = hf.get_job_result("job-abc")
+
+    assert calls == [["generate", "get", "job-abc"]]
+    assert result["results"]["rawUrl"] == "dry://asset"
+
+
 def test_run_cli_dry_run_never_spawns_process(monkeypatch):
     monkeypatch.setattr(type(hf.settings), "dry_run", property(lambda self: True))
 

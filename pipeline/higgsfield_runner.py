@@ -34,6 +34,11 @@ def run_cli(args: list) -> dict:
     return json.loads(result.stdout)
 
 
+def get_job_result(job_id: str) -> dict:
+    """Resolve a submitted job to its result payload (`results.rawUrl` is the asset)."""
+    return run_cli(["generate", "get", job_id])
+
+
 def generate_narration(sb, ep) -> str:
     voice_id = os.getenv("HF_VOICE_ID", "")
     narration_text = " ".join(block["narration_bm"] for block in ep["script"])
