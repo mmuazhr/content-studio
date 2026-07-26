@@ -6,9 +6,15 @@ from uuid import uuid4
 from pipeline.config import settings
 from pipeline.db import get_episode
 
-# Character reference job IDs, from docs/characters.md.
-NARO_REF_JOB_ID = "6f818645-197a-4b31-a9f3-a41ead837de5"
-EXA_REF_JOB_ID = "656394a8-98f3-4357-9219-0079086063f8"
+# Canonical character reference IMAGES (docs/characters.md). Local paths — the
+# CLI auto-uploads them as typed media_inputs; MCP-era job IDs are rejected by
+# the server when passed from the CLI (verified live 2026-07-26).
+def _ref(path: str) -> str:
+    return str(settings.assets_root / "mascot-concepts" / path)
+
+
+NARO_REF = "alien-a.png"
+EXA_REF = "robot-b.png"
 
 # Higgsfield job types (CLI surface: `higgsfield generate create <job_type>`),
 # verified against the live CLI on 2026-07-26. Block pipeline: a Nano Banana
@@ -48,8 +54,17 @@ def run_cli(args: list) -> dict:
 
 
 def get_job_result(job_id: str) -> dict:
-    """Resolve a submitted job to its result payload (`results.rawUrl` is the asset)."""
+    """Resolve a submitted job to its result payload."""
     return run_cli(["generate", "get", job_id])
+
+
+def result_url(payload: dict) -> str:
+    """Asset URL across payload shapes: live CLI uses `result_url`, dry stubs
+    use `results.rawUrl`."""
+    url = payload.get("result_url") or (payload.get("results") or {}).get("rawUrl")
+    if not url:
+        raise RuntimeError(f"no result url in job payload: {list(payload.keys())}")
+    return url
 
 
 def generate_narration(sb, ep) -> str:
@@ -84,8 +99,8 @@ def generate_block(sb, ep, idx: int) -> str:
                 "chunky cube-built characters, matte clay-plastic render, soft "
                 "studio lighting, beige voxel tile platform, warm cream background."
             ),
-            "--image-references", NARO_REF_JOB_ID,
-            "--image-references", EXA_REF_JOB_ID,
+            "--image-references", _ref(NARO_REF),
+            "--image-references", _ref(EXA_REF),
             "--aspect_ratio", "9:16",
             "--wait",
         ])
@@ -124,11 +139,11 @@ def assemble(sb, ep) -> str:
         work.mkdir(parents=True, exist_ok=True)
 
         narration_path = work / "narration.mp3"
-        _download_asset(get_job_result(jobs["narration"])["results"]["rawUrl"], narration_path)
+        _download_asset(result_url(get_job_result(jobs["narration"])), narration_path)
         block_paths = []
         for i, block_id in enumerate(block_ids):
             path = work / f"block_{i}.mp4"
-            _download_asset(get_job_result(block_id)["results"]["rawUrl"], path)
+            _download_asset(result_url(get_job_result(block_id)), path)
             block_paths.append(path)
 
         listfile = work / "concat.txt"

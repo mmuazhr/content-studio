@@ -22,8 +22,8 @@ def _episode_guard(sb, episode_id):
 
 
 def _assembly_asset_url(assembly_job_id: str) -> str:
-    from pipeline.higgsfield_runner import get_job_result
-    return get_job_result(assembly_job_id)["results"]["rawUrl"]
+    from pipeline.higgsfield_runner import get_job_result, result_url
+    return result_url(get_job_result(assembly_job_id))
 
 
 def _download(url: str, ep: dict) -> str:
