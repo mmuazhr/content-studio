@@ -44,8 +44,11 @@ def run_cli(args: list) -> dict:
         ["higgsfield", *args, "--json"],
         capture_output=True,
         text=True,
-        check=True,
     )
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"higgsfield CLI failed ({result.returncode}): {result.stderr[-600:]}"
+        )
     payload = json.loads(result.stdout)
     # `--wait --json` prints the final job object array; normalize to one dict.
     if isinstance(payload, list):
@@ -109,10 +112,19 @@ def generate_block(sb, ep, idx: int) -> str:
     still_id = ensure_job(sb, ep["id"], f"block_{idx}_still", submit_still)
 
     def submit_video():
+        if settings.dry_run:
+            return run_cli(["dry-video"])["id"]
+        # Job IDs are rejected as media inputs by this CLI version (sent
+        # untyped) — download the still and pass a local file path instead.
+        ep_key = f"ep{ep['ep_number']}" if ep.get("ep_number") is not None else ep["id"]
+        work = settings.assets_root / "episodes" / ep_key / "work"
+        work.mkdir(parents=True, exist_ok=True)
+        still_path = work / f"still_{idx}.png"
+        _download_asset(result_url(get_job_result(still_id)), still_path)
         result = run_cli([
             "generate", "create", VIDEO_JOB_TYPE,
             "--prompt", f"Gentle toy-stop-motion style animation: {scene}. Subtle idle motion, slow camera push-in.",
-            "--start-image", still_id,
+            "--start-image", str(still_path),
             "--aspect_ratio", "9:16",
             "--duration", "10",
             "--sound", "off",
