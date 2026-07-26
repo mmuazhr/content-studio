@@ -34,7 +34,10 @@ macOS notes (already baked into start-airflow.sh — for awareness):
 ## Decisions still needed from you
 - **Channel handle** — for EP00's end-card text (docs/episodes/ep00-intro.md Block 2) before the REAL production run.
 - **Narrator voice** — say the word and I'll shortlist Malay-capable Higgsfield voices; the pick goes into `.env` as `HF_VOICE_ID`.
-- **Anthropic API key** — paste into `.env` (`ANTHROPIC_API_KEY=`) to enable the topic_research DAG's live run (drafting new episode candidates).
+- ~~Anthropic API key~~ — NOT needed anymore: the pipeline now uses your Claude Code
+  subscription (CLI `claude -p`) automatically when no real API key is set. An API
+  key in `.env` only becomes relevant when this ever runs on a machine without
+  your Claude login (e.g. cloud deploy).
 
 ## Go-live (after UAT passes — spends real Higgsfield credits)
 1. Install Higgsfield CLI: `curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh` then `higgsfield auth login` (browser sign-in).
