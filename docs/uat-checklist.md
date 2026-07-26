@@ -45,17 +45,18 @@ macOS notes (already baked into start-airflow.sh — for awareness):
   key in `.env` only becomes relevant when this ever runs on a machine without
   your Claude login (e.g. cloud deploy).
 
-## Go-live (after UAT passes — spends real Higgsfield credits)
-1. ~~Install CLI~~ DONE (v1.1.19 at ~/.local/bin/higgsfield). YOUR steps (interactive):
-   type `! higgsfield auth login` (browser sign-in), then `! higgsfield workspace set <id>`
-   (it lists your workspaces).
-2. Claude then verifies the three job surfaces against the logged-in CLI
-   (`higgsfield model get text2speech_v2 / seedance_2_0`, `higgsfield workflow list`
-   for assembly) and finalizes `assemble()` — it is intentionally gated until then.
-3. Confirm `HF_VOICE_ID` (provisional: Hana) + channel handle. Fresh EP00 is already queued.
-4. Set `DRY_RUN=0` in `.env`, restart the dashboard, approve EP00 → real narration +
-   2 video blocks + assembly, downloaded to `assets/episodes/ep0/final.mp4`.
-5. Set `DRY_RUN=1` back afterwards (default-safe).
+## Go-live (spends real Higgsfield credits)
+All prerequisites are DONE (2026-07-26): CLI installed + authed, workspace selected
+(starter plan, 186 credits), job surfaces verified live, ffmpeg installed for local
+assembly. Verified pipeline per block: Nano Banana still with Naro/Exa references
+(2cr) → Kling 3.0 animates it via start_image, 10s, sound off (15cr); narration via
+text2speech_v2/elevenlabs (~0.2cr). **EP00 total ≈ 35 credits.**
+
+Remaining:
+1. Confirm `HF_VOICE_ID` (provisional: Hana — previews above) + channel handle.
+2. Set `DRY_RUN=0` in `.env`, restart the dashboard, approve EP00 in the queue →
+   `assets/episodes/ep0/final.mp4`.
+3. Set `DRY_RUN=1` back afterwards (default-safe).
 
 ## Security debt (slice 2, before ANY deploy)
 - Enable RLS + policies on cs_episodes / cs_approvals / cs_runs (currently open to anyone with the anon key; also 5 older fluent-ai tables flagged).
