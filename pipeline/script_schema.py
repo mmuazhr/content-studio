@@ -7,8 +7,8 @@ SHOTS = ("talk", "cutaway")  # cutaway = silent concept-visualization insert
 
 
 def validate_script(script):
-    if not isinstance(script, list) or not (1 <= len(script) <= 4):
-        raise ScriptValidationError("script must be a list of 1-4 blocks")
+    if not isinstance(script, list) or not (1 <= len(script) <= 5):
+        raise ScriptValidationError("script must be a list of 1-5 blocks")
     out = []
     for i, b in enumerate(script):
         if not isinstance(b, dict):

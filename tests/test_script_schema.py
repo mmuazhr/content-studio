@@ -20,10 +20,10 @@ def test_empty_list_raises():
         validate_script([])
 
 
-def test_more_than_four_blocks_raises():
+def test_more_than_five_blocks_raises():
     block = {"narration_bm": "Narasi yang cukup panjang untuk lulus.", "visual": "shot"}
     with pytest.raises(ScriptValidationError):
-        validate_script([block] * 5)
+        validate_script([block] * 6)
 
 
 def test_missing_narration_bm_raises():
