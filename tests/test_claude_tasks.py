@@ -40,6 +40,8 @@ def _install_fake_client(monkeypatch, responses):
     monkeypatch.setattr(
         type(claude_tasks.settings), "anthropic_key", property(lambda self: "test-key")
     )
+    # A real key routes to the SDK path; without this the CLI fallback would win.
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test-key")
     return fake_client
 
 
@@ -73,3 +75,40 @@ def test_draft_script_raises_after_retry_on_garbage_twice(monkeypatch):
         claude_tasks.draft_script(
             "Apa itu AI?", "Pengenalan ringkas kepada AI untuk pemula."
         )
+
+
+class FakeCompleted:
+    def __init__(self, stdout, returncode=0, stderr=""):
+        self.stdout = stdout
+        self.returncode = returncode
+        self.stderr = stderr
+
+
+def test_draft_script_uses_cli_when_no_api_key(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "REPLACE_ME")
+    monkeypatch.setattr(claude_tasks.shutil, "which", lambda name: "/fake/claude")
+    calls = []
+
+    def fake_run(cmd, **kwargs):
+        calls.append(cmd)
+        return FakeCompleted(VALID_SCRIPT)
+
+    monkeypatch.setattr(claude_tasks.subprocess, "run", fake_run)
+    blocks = claude_tasks.draft_script(
+        "Apa itu AI?", "Pengenalan ringkas kepada AI untuk pemula."
+    )
+    assert len(blocks) == 2
+    assert calls[0][0] == "/fake/claude"
+    assert calls[0][1] == "-p"
+
+
+def test_cli_failure_raises(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "")
+    monkeypatch.setattr(claude_tasks.shutil, "which", lambda name: "/fake/claude")
+    monkeypatch.setattr(
+        claude_tasks.subprocess,
+        "run",
+        lambda cmd, **kwargs: FakeCompleted("", returncode=1, stderr="not logged in"),
+    )
+    with pytest.raises(RuntimeError):
+        claude_tasks._call("hello")

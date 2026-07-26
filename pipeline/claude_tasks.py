@@ -1,4 +1,7 @@
 import json
+import os
+import shutil
+import subprocess
 
 import anthropic
 
@@ -6,6 +9,9 @@ from pipeline.config import settings
 from pipeline.script_schema import validate_script, ScriptValidationError
 
 MODEL = "claude-sonnet-5"
+# CLI fallback rides the user's Claude subscription (no API key needed).
+CLI_MODEL = "sonnet"
+CLI_FALLBACK_PATH = os.path.expanduser("~/.local/bin/claude")
 
 CHARACTER_BRIEF = """\
 Channel: Malay-language (Bahasa Melayu) AI explainer duo, voxel/pixel-block toy
@@ -21,7 +27,39 @@ def _client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=settings.anthropic_key)
 
 
+def _cli_path():
+    """Path to the Claude Code CLI, or None. Used when no real API key is set."""
+    key = os.getenv("ANTHROPIC_API_KEY", "")
+    if key and key != "REPLACE_ME":
+        return None
+    found = shutil.which("claude")
+    if found:
+        return found
+    if os.path.exists(CLI_FALLBACK_PATH):
+        return CLI_FALLBACK_PATH
+    return None
+
+
+def _call_cli(cli: str, prompt: str) -> str:
+    # The CLI prefers ANTHROPIC_API_KEY over the claude.ai login if set —
+    # strip the placeholder so the subscription auth is used.
+    env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    result = subprocess.run(
+        [cli, "-p", prompt, "--model", CLI_MODEL],
+        capture_output=True,
+        text=True,
+        timeout=300,
+        env=env,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(f"claude CLI failed: {result.stderr[:500]}")
+    return result.stdout.strip()
+
+
 def _call(prompt: str, max_tokens: int = 2000) -> str:
+    cli = _cli_path()
+    if cli:
+        return _call_cli(cli, prompt)
     client = _client()
     message = client.messages.create(
         model=MODEL,
