@@ -33,17 +33,29 @@ macOS notes (already baked into start-airflow.sh — for awareness):
 
 ## Decisions still needed from you
 - **Channel handle** — for EP00's end-card text (docs/episodes/ep00-intro.md Block 2) before the REAL production run.
-- **Narrator voice** — say the word and I'll shortlist Malay-capable Higgsfield voices; the pick goes into `.env` as `HF_VOICE_ID`.
+- **Narrator voice** — provisional pick is **Hana** (already in `.env`). Listen to
+  these previews (30s total) and swap `HF_VOICE_ID` if another fits BM narration
+  better:
+  - Hana (f): https://d1xarpci4ikg0w.cloudfront.net/audio_voice_preset/preview/3a978518-1fae-451e-bc30-08cb35b0d79f.mp3 — id `c25f78a0-714e-42af-8da3-a399cef94968`
+  - Naomi (f): https://cdn.higgsfield.ai/audio_voice/bfe496ad-1296-441e-9ba6-02cfe4761eb3.wav — id `caeba733-3c17-43db-863e-69c7025512cd`
+  - Leo (m): https://d1xarpci4ikg0w.cloudfront.net/audio_voice_preset/preview/65169043-8bf9-403e-84e4-0eb6262026fd.mp3 — id `73a45c18-0c56-4642-a61e-f6b303f8ded1`
+  - Marcus (m): https://cdn.higgsfield.ai/audio_voice/cd7a989c-89ba-43c8-bc02-44a8c429825f.wav — id `6f98d3dd-324f-4845-8c28-c1d1647a06cd`
 - ~~Anthropic API key~~ — NOT needed anymore: the pipeline now uses your Claude Code
   subscription (CLI `claude -p`) automatically when no real API key is set. An API
   key in `.env` only becomes relevant when this ever runs on a machine without
   your Claude login (e.g. cloud deploy).
 
 ## Go-live (after UAT passes — spends real Higgsfield credits)
-1. Install Higgsfield CLI: `curl -fsSL https://raw.githubusercontent.com/higgsfield-ai/cli/main/install.sh | sh` then `higgsfield auth login` (browser sign-in).
-2. Set `HF_VOICE_ID` and the channel handle; reset EP00 if it was consumed in UAT (re-run `.venv/bin/python scripts/seed_ep00.py`).
-3. Set `DRY_RUN=0` in `.env`, restart the dashboard, approve EP00 → real narration + 2 video blocks + assembly are generated and downloaded to `assets/episodes/ep0/final.mp4`.
-4. Set `DRY_RUN=1` back afterwards (default-safe).
+1. ~~Install CLI~~ DONE (v1.1.19 at ~/.local/bin/higgsfield). YOUR steps (interactive):
+   type `! higgsfield auth login` (browser sign-in), then `! higgsfield workspace set <id>`
+   (it lists your workspaces).
+2. Claude then verifies the three job surfaces against the logged-in CLI
+   (`higgsfield model get text2speech_v2 / seedance_2_0`, `higgsfield workflow list`
+   for assembly) and finalizes `assemble()` — it is intentionally gated until then.
+3. Confirm `HF_VOICE_ID` (provisional: Hana) + channel handle. Fresh EP00 is already queued.
+4. Set `DRY_RUN=0` in `.env`, restart the dashboard, approve EP00 → real narration +
+   2 video blocks + assembly, downloaded to `assets/episodes/ep0/final.mp4`.
+5. Set `DRY_RUN=1` back afterwards (default-safe).
 
 ## Security debt (slice 2, before ANY deploy)
 - Enable RLS + policies on cs_episodes / cs_approvals / cs_runs (currently open to anyone with the anon key; also 5 older fluent-ai tables flagged).
