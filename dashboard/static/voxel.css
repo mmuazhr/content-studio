@@ -1,0 +1,304 @@
+/* content-studio — voxel design system tokens */
+
+:root {
+  --cs-bg: #f4efe6;
+  --cs-tile: #e5dccb;
+  --cs-ink: #23283a;
+  --cs-naro: #6cbb5c;
+  --cs-naro-suit: #4a7fd4;
+  --cs-exa: #7fd8c4;
+  --cs-accent: #e0803a;
+  --cs-error: #d84a3a;
+}
+
+body {
+  background: var(--cs-bg);
+  color: var(--cs-ink);
+  font-family: "Courier New", monospace;
+}
+
+/* Card */
+.cs-card {
+  background: #fffdf9;
+  border: 4px solid var(--cs-ink);
+  border-radius: 10px;
+  box-shadow: 4px 4px 0 rgba(35, 40, 58, 0.25);
+  padding: 16px;
+}
+
+/* Buttons */
+.cs-btn {
+  display: inline-block;
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: 3px solid var(--cs-ink);
+  border-radius: 8px;
+  padding: 8px 18px;
+  box-shadow: 3px 3px 0 rgba(35, 40, 58, 0.25);
+  cursor: pointer;
+  color: var(--cs-ink);
+  background: var(--cs-tile);
+}
+
+.cs-btn--approve {
+  background: var(--cs-naro);
+  color: #fffdf9;
+}
+
+.cs-btn--reject {
+  background: var(--cs-error);
+  color: #fffdf9;
+}
+
+.cs-btn--ghost {
+  background: transparent;
+  border: 3px solid var(--cs-ink);
+  color: var(--cs-ink);
+}
+
+/* Chips */
+.cs-chip {
+  display: inline-block;
+  font-family: "Courier New", monospace;
+  text-transform: uppercase;
+  font-size: 12px;
+  border: 2px solid var(--cs-ink);
+  border-radius: 4px;
+  padding: 2px 10px;
+}
+
+.cs-chip--proposed {
+  background: #e5dccb;
+  color: var(--cs-ink);
+}
+
+.cs-chip--pending_script_review {
+  background: var(--cs-accent);
+  color: #fffdf9;
+}
+
+.cs-chip--script_approved {
+  background: var(--cs-naro);
+  color: #fffdf9;
+}
+
+.cs-chip--rejected {
+  background: var(--cs-error);
+  color: #fffdf9;
+}
+
+.cs-chip--backlog {
+  background: #b9b3a5;
+  color: var(--cs-ink);
+}
+
+.cs-chip--generating {
+  background: var(--cs-exa);
+  color: var(--cs-ink);
+}
+
+.cs-chip--pending_video_review {
+  background: var(--cs-accent);
+  color: #fffdf9;
+}
+
+.cs-chip--video_approved {
+  background: var(--cs-naro);
+  color: #fffdf9;
+}
+
+.cs-chip--posted {
+  background: #3f9e8f;
+  color: #fffdf9;
+}
+
+.cs-chip--archived {
+  background: #b9b3a5;
+  color: var(--cs-ink);
+}
+
+.cs-chip--error {
+  background: var(--cs-error);
+  color: #fffdf9;
+}
+
+/* Timeline */
+.cs-timeline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.cs-timeline .cs-step {
+  flex: 1;
+  text-align: center;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  background: var(--cs-tile);
+  border: 3px solid var(--cs-ink);
+  border-radius: 6px;
+  padding: 8px 4px;
+  box-shadow: 3px 3px 0 rgba(35, 40, 58, 0.2);
+}
+
+.cs-timeline .cs-step.is-current {
+  background: var(--cs-accent);
+  color: #fffdf9;
+  box-shadow: 4px 4px 0 rgba(35, 40, 58, 0.35);
+}
+
+/* ---- dashboard layout (tokens above are a verbatim copy of design-system/tokens.css) ---- */
+
+body {
+  margin: 0;
+  padding: 0 24px 48px;
+}
+
+.cs-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 4px solid var(--cs-ink);
+  margin-bottom: 24px;
+}
+
+.cs-header h1 {
+  margin: 0;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+.cs-mascot {
+  height: 72px;
+  image-rendering: pixelated;
+}
+
+.cs-nav a {
+  color: var(--cs-ink);
+  font-size: 13px;
+  text-transform: uppercase;
+  margin-right: 16px;
+}
+
+.cs-flash {
+  border: 3px solid var(--cs-ink);
+  border-radius: 8px;
+  background: var(--cs-exa);
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  font-size: 13px;
+}
+
+.cs-flash--error {
+  background: var(--cs-error);
+  color: #fffdf9;
+}
+
+.cs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.cs-card + .cs-card,
+form.cs-card {
+  margin-top: 20px;
+}
+
+.cs-card h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.cs-card .meta,
+.cs-card .summary {
+  font-size: 12px;
+  margin: 6px 0 10px;
+}
+
+.cs-card--error {
+  border-color: var(--cs-error);
+}
+
+.cs-empty {
+  font-size: 13px;
+}
+
+.cs-errorlog {
+  font-size: 12px;
+  white-space: pre-wrap;
+  color: var(--cs-error);
+}
+
+.cs-timeline .cs-step {
+  min-width: 0;
+}
+
+.block {
+  margin: 16px 0;
+}
+
+.block h4 {
+  margin: 0 0 6px;
+  font-size: 13px;
+  text-transform: uppercase;
+}
+
+label {
+  display: block;
+  font-size: 11px;
+  text-transform: uppercase;
+  margin: 8px 0 4px;
+}
+
+textarea,
+input[type="text"] {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  border: 3px solid var(--cs-ink);
+  border-radius: 6px;
+  padding: 8px;
+  background: #fffdf9;
+  color: var(--cs-ink);
+  resize: vertical;
+}
+
+.cs-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.cs-video {
+  width: 100%;
+  max-width: 320px;
+  border: 4px solid var(--cs-ink);
+  border-radius: 10px;
+}
+
+.cs-note {
+  font-size: 12px;
+}
+
+.cs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.cs-table th,
+.cs-table td {
+  text-align: left;
+  padding: 8px 6px;
+  border-bottom: 2px solid rgba(35, 40, 58, 0.2);
+}
+
+.cs-table a {
+  color: var(--cs-ink);
+}

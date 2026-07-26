@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Review Queue — content-studio{% endblock %}
+{% block content %}
+<h2>Review Queue</h2>
+
+{% if not episodes %}
+  <div class="cs-card cs-empty">
+    Nothing waiting for review. Run <code>topic_research</code> in Airflow, or seed EP00.
+  </div>
+{% endif %}
+
+<div class="cs-grid">
+  {% for ep in episodes %}
+  <div class="cs-card">
+    <h3>
+      {% if ep.ep_number is not none %}EP{{ '%02d' % ep.ep_number }} — {% endif %}{{ ep.title }}
+    </h3>
+    <div class="meta">{{ ep.episode_type }} · 9:16 · {{ ep.script|length }} block(s)</div>
+    <span class="cs-chip cs-chip--{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>
+    {% if ep.status == 'error' and ep.error_log %}
+      <p class="cs-errorlog">{{ ep.error_log }}</p>
+    {% endif %}
+    <p class="summary">{{ ep.topic_summary }}</p>
+    <a class="cs-btn cs-btn--ghost" href="/episode/{{ ep.id }}">Open</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}History — content-studio{% endblock %}
+{% block content %}
+<h2>Episodes</h2>
+<div class="cs-card">
+  <table class="cs-table">
+    <tr><th>EP</th><th>Title</th><th>Status</th><th>Updated</th></tr>
+    {% for ep in episodes %}
+    <tr>
+      <td>{{ '%02d' % ep.ep_number if ep.ep_number is not none else '—' }}</td>
+      <td><a href="/episode/{{ ep.id }}">{{ ep.title }}</a></td>
+      <td><span class="cs-chip cs-chip--{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span></td>
+      <td>{{ ep.updated_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No episodes yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+
+<h2>Pipeline runs</h2>
+<div class="cs-card">
+  <table class="cs-table">
+    <tr><th>DAG</th><th>Run</th><th>Outcome</th><th>Credits</th><th>Started</th></tr>
+    {% for run in runs %}
+    <tr>
+      <td>{{ run.dag_id }}</td>
+      <td>{{ run.airflow_run_id }}</td>
+      <td>{{ run.outcome }}</td>
+      <td>{{ run.credits_note }}</td>
+      <td>{{ run.started_at }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No runs yet.</td></tr>
+    {% endfor %}
+  </table>
+</div>
+{% endblock %}

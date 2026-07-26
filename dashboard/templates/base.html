@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{% block title %}content-studio{% endblock %}</title>
+<link rel="stylesheet" href="/static/voxel.css" />
+</head>
+<body>
+  <header class="cs-header">
+    <img src="/assets/mascot-concepts/duo.png" alt="Naro and Exa" class="cs-mascot" />
+    <div>
+      <h1>content-studio</h1>
+      <nav class="cs-nav">
+        <a href="/">Review Queue</a>
+        <a href="/history">History</a>
+      </nav>
+    </div>
+  </header>
+
+  {% if request.query_params.get('msg') %}
+    <div class="cs-flash">{{ request.query_params.get('msg') }}</div>
+  {% endif %}
+  {% if request.query_params.get('error') %}
+    <div class="cs-flash cs-flash--error">{{ request.query_params.get('error') }}</div>
+  {% endif %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

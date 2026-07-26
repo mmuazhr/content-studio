@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{{ ep.title }} — content-studio{% endblock %}
+{% block content %}
+<h2>{% if ep.ep_number is not none %}EP{{ '%02d' % ep.ep_number }} — {% endif %}{{ ep.title }}</h2>
+<span class="cs-chip cs-chip--{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>
+
+<div class="cs-card" style="margin-top:16px;">
+  <div class="cs-timeline">
+    {% for step in TIMELINE %}
+      <div class="cs-step {% if step == ep.status %}is-current{% endif %}">
+        {{ loop.index }}. {{ step.replace('_', ' ') }}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if ep.status == 'error' %}
+<div class="cs-card cs-card--error">
+  <h3>Error</h3>
+  <pre class="cs-errorlog">{{ ep.error_log }}</pre>
+</div>
+{% endif %}
+
+{% if ep.status == 'script_approved' or ep.status == 'generating' %}
+<div class="cs-card">
+  <h3>Production hand-off</h3>
+  <p>Approved and handed to Airflow. If the trigger failed, retry it — re-runs are safe.</p>
+  <form method="post" action="/episode/{{ ep.id }}/trigger">
+    <button class="cs-btn cs-btn--ghost" type="submit">Trigger failed — retry</button>
+  </form>
+</div>
+{% endif %}
+
+{% if ep.status == 'pending_video_review' %}
+<div class="cs-card">
+  <h3>Video preview</h3>
+  {% if asset_src %}
+    <video class="cs-video" src="{{ asset_src }}" controls></video>
+  {% else %}
+    <p class="cs-note">No playable file. Asset: <code>{{ ep.video_url }}</code></p>
+  {% endif %}
+  <h3>Caption</h3>
+  <p class="cs-note">{{ ep.caption }}</p>
+</div>
+{% endif %}
+
+<form class="cs-card" method="post" action="/episode/{{ ep.id }}/decision">
+  <h3>Script</h3>
+  {% for block in ep.script %}
+  <div class="block">
+    <h4>Block {{ loop.index }}</h4>
+    <label>Narration (BM)</label>
+    <textarea name="narration_bm" rows="3" {% if ep.status != 'pending_script_review' %}readonly{% endif %}>{{ block.narration_bm }}</textarea>
+    <label>Visual</label>
+    <textarea name="visual" rows="3" {% if ep.status != 'pending_script_review' %}readonly{% endif %}>{{ block.visual }}</textarea>
+    <label>On-screen text</label>
+    <input type="text" name="on_screen_text" value="{{ block.on_screen_text }}" {% if ep.status != 'pending_script_review' %}readonly{% endif %} />
+    <label>SFX</label>
+    <input type="text" name="sfx" value="{{ block.sfx }}" {% if ep.status != 'pending_script_review' %}readonly{% endif %} />
+  </div>
+  {% endfor %}
+
+  {% if ep.status == 'pending_script_review' or ep.status == 'pending_video_review' %}
+  <label>Note (optional)</label>
+  <input type="text" name="note" />
+  <input type="hidden" name="gate" value="{{ 'script' if ep.status == 'pending_script_review' else 'video' }}" />
+  <div class="cs-actions">
+    {% if ep.status == 'pending_script_review' %}
+      <button class="cs-btn cs-btn--ghost" type="submit" formaction="/episode/{{ ep.id }}/script">Save Edits</button>
+    {% endif %}
+    <button class="cs-btn cs-btn--approve" type="submit" name="decision" value="approve">
+      {{ 'Approve Script' if ep.status == 'pending_script_review' else 'Approve Video' }}
+    </button>
+    <button class="cs-btn cs-btn--reject" type="submit" name="decision" value="reject">Reject</button>
+    {% if ep.status == 'pending_script_review' %}
+      <button class="cs-btn" type="submit" name="decision" value="backlog">Backlog</button>
+    {% endif %}
+  </div>
+  {% endif %}
+</form>
+{% endblock %}
