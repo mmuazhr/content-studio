@@ -4,11 +4,13 @@
 <h2>Review Queue</h2>
 
 {% set script_eps = episodes | selectattr('status', 'equalto', 'pending_script_review') | list %}
-{% set video_eps = episodes | selectattr('status', 'in', ['pending_video_review', 'generating']) | list %}
+{% set gen_eps = episodes | selectattr('status', 'in', ['script_approved', 'generating']) | list %}
+{% set video_eps = episodes | selectattr('status', 'equalto', 'pending_video_review') | list %}
 {% set error_eps = episodes | selectattr('status', 'equalto', 'error') | list %}
 
 <div class="cs-tabs">
   <button class="cs-tab is-active" data-tab="script">Script Review ({{ script_eps|length }})</button>
+  <button class="cs-tab cs-tab--gen" data-tab="gen">Generating ({{ gen_eps|length }})</button>
   <button class="cs-tab" data-tab="video">Video Review ({{ video_eps|length }})</button>
   {% if error_eps %}<button class="cs-tab cs-tab--error" data-tab="errors">Errors ({{ error_eps|length }})</button>{% endif %}
 </div>
@@ -32,8 +34,12 @@
   {% if not script_eps %}<div class="cs-card cs-empty">No scripts waiting. Run <code>topic_research</code> in Airflow.</div>{% endif %}
   <div class="cs-grid">{% for ep in script_eps %}{{ card(ep) }}{% endfor %}</div>
 </div>
+<div class="cs-tabpane" id="tab-gen" hidden>
+  {% if not gen_eps %}<div class="cs-card cs-empty">Nothing generating right now.</div>{% endif %}
+  <div class="cs-grid">{% for ep in gen_eps %}{{ card(ep) }}{% endfor %}</div>
+</div>
 <div class="cs-tabpane" id="tab-video" hidden>
-  {% if not video_eps %}<div class="cs-card cs-empty">Nothing generating or awaiting video review.</div>{% endif %}
+  {% if not video_eps %}<div class="cs-card cs-empty">Nothing awaiting video review.</div>{% endif %}
   <div class="cs-grid">{% for ep in video_eps %}{{ card(ep) }}{% endfor %}</div>
 </div>
 {% if error_eps %}
@@ -49,6 +55,7 @@
     background: var(--cs-tile); cursor: pointer; box-shadow: 3px 3px 0 rgba(35,40,58,.15); }
   .cs-tab.is-active { background: var(--cs-exa); box-shadow: none; transform: translateY(2px); }
   .cs-tab--error { background: var(--cs-error); color: #fffdf9; }
+  .cs-tab--gen { background: var(--cs-accent); color: #fffdf9; }
 </style>
 <script>
   document.querySelectorAll(".cs-tab").forEach(function (btn) {
