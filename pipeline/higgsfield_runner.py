@@ -236,14 +236,20 @@ def assemble(sb, ep) -> str:
                     f"block {i} is a talking block but came back with NO audio "
                     f"(job {block_id}) — regenerate before assembling"
                 )
-            if not _has_audio(path):
-                silent = work / f"block_{i}_silent.mp4"
+            # Normalize EVERY block to one audio format (48k stereo AAC) —
+            # the concat demuxer cannot switch stream params mid-stream, and a
+            # mismatched silent track corrupted all audio after the cutaway.
+            norm = work / f"block_{i}_norm.mp4"
+            if _has_audio(path):
+                _ffmpeg(["-i", str(path), "-c:v", "copy",
+                         "-c:a", "aac", "-ar", "48000", "-ac", "2", str(norm)])
+            else:
                 _ffmpeg(["-i", str(path), "-f", "lavfi",
-                         "-i", "anullsrc=channel_layout=mono:sample_rate=44100",
-                         "-shortest", "-c:v", "copy", "-c:a", "aac", str(silent)])
-                path = silent
-            block_paths.append(path)
-            durations.append(_video_duration(path))
+                         "-i", "anullsrc=channel_layout=stereo:sample_rate=48000",
+                         "-shortest", "-c:v", "copy",
+                         "-c:a", "aac", "-ar", "48000", "-ac", "2", str(norm)])
+            block_paths.append(norm)
+            durations.append(_video_duration(norm))
 
         listfile = work / "concat.txt"
         listfile.write_text("".join(f"file '{p}'\n" for p in block_paths))
