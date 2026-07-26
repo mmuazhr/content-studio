@@ -161,6 +161,28 @@ async def decide(
                 _save_script(sb, episode_id, blocks)
                 edited = True
 
+    return await _apply_decision(sb, ep, episode_id, gate, decision, note, edited)
+
+
+@app.get("/api/status")
+def api_status(sb=Depends(get_sb)):
+    """Live status feed polled by the frontend (5s): status + generation
+    progress (done vs expected job slots) per episode."""
+    episodes = []
+    for e in list_episodes(sb):
+        script = e.get("script") or []
+        talking = bool(script) and all(b.get("speaker") for b in script)
+        expected = len(script) * 2 + 1 + (0 if talking else 1)
+        episodes.append({
+            "id": e["id"],
+            "status": e["status"],
+            "done": len(e.get("higgsfield_jobs") or {}),
+            "expected": expected,
+        })
+    return {"episodes": episodes}
+
+
+async def _apply_decision(sb, ep, episode_id, gate, decision, note, edited):
     try:
         if decision == "reject":
             record_approval(sb, episode_id, gate, "rejected", note=note)

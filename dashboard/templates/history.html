@@ -9,7 +9,7 @@
     <tr>
       <td>{{ '%02d' % ep.ep_number if ep.ep_number is not none else '—' }}</td>
       <td><a href="/episode/{{ ep.id }}">{{ ep.title }}</a></td>
-      <td><span class="cs-chip cs-chip--{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span></td>
+      <td><span class="cs-chip cs-chip--{{ ep.status }}" data-episode="{{ ep.id }}" data-status="{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>{% if ep.status == 'generating' %}<span class="cs-progress"><span class="cs-progress-fill"></span><span class="cs-progress-label" data-progress="{{ ep.id }}"></span></span>{% endif %}</td>
       <td>{{ ep.updated_at }}</td>
     </tr>
     {% else %}

@@ -16,7 +16,7 @@
       {% if ep.ep_number is not none %}EP{{ '%02d' % ep.ep_number }} — {% endif %}{{ ep.title }}
     </h3>
     <div class="meta">{{ ep.episode_type }} · 9:16 · {{ ep.script|length }} block(s)</div>
-    <span class="cs-chip cs-chip--{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>
+    <span class="cs-chip cs-chip--{{ ep.status }}" data-episode="{{ ep.id }}" data-status="{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>{% if ep.status == 'generating' %}<span class="cs-progress"><span class="cs-progress-fill"></span><span class="cs-progress-label" data-progress="{{ ep.id }}"></span></span>{% endif %}
     {% if ep.status == 'error' and ep.error_log %}
       <p class="cs-errorlog">{{ ep.error_log }}</p>
     {% endif %}

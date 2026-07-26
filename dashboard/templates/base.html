@@ -28,5 +28,41 @@
   <main>
     {% block content %}{% endblock %}
   </main>
+<style>
+  .cs-progress { display: inline-flex; align-items: center; gap: 8px; margin-left: 10px;
+    width: 140px; height: 14px; border: 2px solid var(--cs-ink); border-radius: 4px;
+    background: var(--cs-tile); overflow: hidden; position: relative; vertical-align: middle; }
+  .cs-progress-fill { position: absolute; inset: 0;
+    background: repeating-linear-gradient(45deg, var(--cs-exa) 0 10px, var(--cs-naro) 10px 20px);
+    background-size: 28px 28px; animation: cs-march 0.9s linear infinite; }
+  .cs-progress-label { position: absolute; width: 100%; text-align: center;
+    font: bold 10px "Courier New", monospace; color: var(--cs-ink); z-index: 1; }
+  @keyframes cs-march { from { background-position: 0 0; } to { background-position: 28px 0; } }
+</style>
+<script>
+  (function () {
+    var chips = document.querySelectorAll("[data-episode]");
+    if (!chips.length) return;
+    async function tick() {
+      try {
+        var res = await fetch("/api/status");
+        var data = await res.json();
+        var byId = {};
+        data.episodes.forEach(function (e) { byId[e.id] = e; });
+        var reload = false;
+        chips.forEach(function (chip) {
+          var e = byId[chip.dataset.episode];
+          if (!e) return;
+          if (e.status !== chip.dataset.status) reload = true;
+          var label = document.querySelector('[data-progress="' + e.id + '"]');
+          if (label) label.textContent = e.done + "/" + e.expected;
+        });
+        if (reload) location.reload();
+      } catch (err) { /* server restarting — retry next tick */ }
+    }
+    tick();
+    setInterval(tick, 5000);
+  })();
+</script>
 </body>
 </html>

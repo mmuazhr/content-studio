@@ -2,7 +2,7 @@
 {% block title %}{{ ep.title }} — content-studio{% endblock %}
 {% block content %}
 <h2>{% if ep.ep_number is not none %}EP{{ '%02d' % ep.ep_number }} — {% endif %}{{ ep.title }}</h2>
-<span class="cs-chip cs-chip--{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>
+<span class="cs-chip cs-chip--{{ ep.status }}" data-episode="{{ ep.id }}" data-status="{{ ep.status }}">{{ ep.status.replace('_', ' ') }}</span>{% if ep.status == 'generating' %}<span class="cs-progress"><span class="cs-progress-fill"></span><span class="cs-progress-label" data-progress="{{ ep.id }}"></span></span>{% endif %}
 
 <div class="cs-card" style="margin-top:16px;">
   <div class="cs-timeline">
