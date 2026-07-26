@@ -45,17 +45,12 @@ def list_episodes(sb, status=None):
 
 
 def next_ep_number(sb) -> int:
-    res = (
-        sb.table("cs_episodes")
-        .select("ep_number")
-        .order("ep_number", desc=True)
-        .limit(1)
-        .execute()
-    )
-    rows = res.data or []
-    if not rows or rows[0].get("ep_number") is None:
-        return 0
-    return rows[0]["ep_number"] + 1
+    # NOTE: computed in Python because Postgres sorts NULLs FIRST on desc
+    # order — the old order+limit(1) query returned NULL rows and produced
+    # duplicate episode numbers (ep0 was overwritten once).
+    res = sb.table("cs_episodes").select("ep_number").execute()
+    numbers = [r["ep_number"] for r in (res.data or []) if r.get("ep_number") is not None]
+    return (max(numbers) + 1) if numbers else 0
 
 
 def insert_episode(sb, *, title, topic_summary, script, episode_type="explainer", status="pending_script_review") -> str:

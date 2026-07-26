@@ -23,10 +23,23 @@ DUO_REF = "duo-v2.png"
 AUDIO_JOB_TYPE = os.getenv("HF_AUDIO_JOB", "text2speech_v2")
 TTS_VARIANT = os.getenv("HF_TTS_VARIANT", "elevenlabs")
 STILL_JOB_TYPE = os.getenv("HF_STILL_JOB", "nano_banana_2")
-# veo3_1_lite: native speech + lipsync from dialogue prompts, start_image anchor,
-# 8cr per 8s block (verified 2026-07-26).
-VIDEO_JOB_TYPE = os.getenv("HF_VIDEO_JOB", "veo3_1_lite")
-BLOCK_SECONDS = 8
+# Format v3 (2026-07-26): talk blocks use veo3_1 (audio ALWAYS native — the Lite
+# tier silently dropped audio on a full run); cutaway concept inserts use the
+# cheap Lite tier with audio off.
+TALK_JOB_TYPE = os.getenv("HF_TALK_JOB", "veo3_1")
+CUTAWAY_JOB_TYPE = os.getenv("HF_CUTAWAY_JOB", "veo3_1_lite")
+TALK_SECONDS = 8
+CUTAWAY_SECONDS = 4
+
+# Explicit feature lock — the drift run produced a domeless, five-antenna Naro.
+CHARACTER_LOCK = (
+    "Characters must match the reference image EXACTLY: Naro is the green voxel "
+    "alien inside his round transparent glass dome helmet, exactly ONE antenna, "
+    "blue jumpsuit with a white NARO chest name tag. Exa is the coral-orange "
+    "voxel robot with a pale TV-screen face, one antenna, a white EXA chest name "
+    "tag, grey voxel laptop. No extra antennas, no glowing parts, no invented "
+    "accessories, no color changes."
+)
 
 # Prompt templates hardened per Veo/Kling prompting research (2026-07-26):
 # one speaker per clip, colon dialogue syntax, tone adjectives, motion-only
@@ -106,20 +119,39 @@ def generate_narration(sb, ep) -> str:
     return ensure_job(sb, ep["id"], "narration", submit)
 
 
+def episode_dir(ep) -> str:
+    """Collision-proof per-episode folder: number + id prefix."""
+    n = ep.get("ep_number")
+    prefix = f"ep{n:02d}-" if n is not None else ""
+    return f"{prefix}{ep['id'][:8]}"
+
+
 def generate_block(sb, ep, idx: int) -> str:
     block = ep["script"][idx]
     scene = block["visual"]  # on-screen text is rendered by ffmpeg, never baked
+    shot = block.get("shot", "talk")
+    speaker = block.get("speaker", "")
+
+    if shot == "cutaway":
+        still_prompt = (
+            f"{scene}. Chunky voxel toy diorama visualizing this concept as a "
+            "physical miniature scene, cube-built props, matte clay-plastic "
+            "render, soft studio lighting, beige voxel tile platform, warm "
+            f"cream background, clean composition. {CHARACTER_LOCK} No text "
+            "anywhere in the image."
+        )
+    else:
+        still_prompt = (
+            f"{scene}. Chunky voxel toy diorama, cube-built figures, matte "
+            "clay-plastic render, soft studio lighting, beige voxel tile "
+            "platform, warm cream background, clean centered composition, "
+            f"generous headroom. {CHARACTER_LOCK} No text anywhere in the image."
+        )
 
     def submit_still():
         result = run_cli([
             "generate", "create", STILL_JOB_TYPE,
-            "--prompt", (
-                f"{scene}. Chunky voxel toy diorama matching the reference "
-                "characters exactly: cube-built figures, matte clay-plastic "
-                "render, soft studio lighting, beige voxel tile platform, warm "
-                "cream background, clean centered composition, generous "
-                "headroom, no text anywhere in the image."
-            ),
+            "--prompt", still_prompt,
             "--image-references", _ref(DUO_REF),
             "--aspect_ratio", "9:16",
             "--wait",
@@ -128,44 +160,48 @@ def generate_block(sb, ep, idx: int) -> str:
 
     still_id = ensure_job(sb, ep["id"], f"block_{idx}_still", submit_still)
 
-    speaker = block.get("speaker", "")
-    if speaker:
-        line = block["narration_bm"]
-        prompt = (
-            f'{CHAR_VOICE[speaker]}, saying in Bahasa Melayu: "{line}". '
-            "The character's mouth movement matches the words. Gentle "
-            "stop-motion toy animation, subtle idle bobbing, slow camera "
-            "push-in. Soft cheerful room ambience. No subtitles, no captions, "
-            "no text on screen."
-        )
-        audio = "true"
-    else:
-        prompt = (
-            "Gentle stop-motion toy animation, subtle idle motion, slow camera "
-            "push-in. No subtitles, no captions, no text on screen."
-        )
-        audio = "false"
-
     def submit_video():
         if settings.dry_run:
             return run_cli(["dry-video"])["id"]
         # Job IDs are rejected as media inputs by this CLI version (sent
         # untyped) — download the still and pass a local file path instead.
-        ep_key = f"ep{ep['ep_number']}" if ep.get("ep_number") is not None else ep["id"]
-        work = settings.assets_root / "episodes" / ep_key / "work"
+        work = settings.assets_root / "episodes" / episode_dir(ep) / "work"
         work.mkdir(parents=True, exist_ok=True)
         still_path = work / f"still_{idx}.png"
         _download_asset(result_url(get_job_result(still_id)), still_path)
-        result = run_cli([
-            "generate", "create", VIDEO_JOB_TYPE,
-            "--prompt", prompt,
-            "--start-image", str(still_path),
-            "--aspect_ratio", "9:16",
-            "--duration", str(BLOCK_SECONDS),
-            "--generate_audio", audio,
-            "--wait",
-        ])
-        return result["id"]
+        if shot == "cutaway":
+            args = [
+                "generate", "create", CUTAWAY_JOB_TYPE,
+                "--prompt", (
+                    f"Bring this concept diorama to life: {scene}. Gentle "
+                    "stop-motion toy animation, playful motion, slow camera "
+                    "push-in. No subtitles, no captions, no text on screen."
+                ),
+                "--start-image", str(still_path),
+                "--aspect_ratio", "9:16",
+                "--duration", str(CUTAWAY_SECONDS),
+                "--generate_audio", "false",
+                "--wait",
+            ]
+        else:
+            line = block["narration_bm"]
+            args = [
+                "generate", "create", TALK_JOB_TYPE,
+                "--prompt", (
+                    f'{CHAR_VOICE[speaker]}, speaking TO the audience, saying '
+                    f'in Bahasa Melayu: "{line}". The character\'s mouth '
+                    "movement matches the words; the other character reacts "
+                    "(nods, tilts, listens). Gentle stop-motion toy animation, "
+                    "subtle idle bobbing, slow camera push-in. Soft cheerful "
+                    "room ambience. No subtitles, no captions, no text on "
+                    "screen."
+                ),
+                "--start-image", str(still_path),
+                "--aspect_ratio", "9:16",
+                "--duration", str(TALK_SECONDS),
+                "--wait",
+            ]
+        return run_cli(args)["id"]
 
     return ensure_job(sb, ep["id"], f"block_{idx}", submit_video)
 
@@ -178,40 +214,42 @@ def assemble(sb, ep) -> str:
         if settings.dry_run:
             return run_cli(["assemble-dry"])["id"]
         # No assembly workflow exists on the Higgsfield CLI (verified
-        # 2026-07-26): stitch locally with ffmpeg — concat sound-off blocks,
-        # overlay the narration track.
-        ep_key = f"ep{ep['ep_number']}" if ep.get("ep_number") is not None else ep["id"]
-        outdir = settings.assets_root / "episodes" / ep_key
+        # 2026-07-26): stitch locally with ffmpeg.
+        outdir = settings.assets_root / "episodes" / episode_dir(ep)
         work = outdir / "work"
         work.mkdir(parents=True, exist_ok=True)
 
-        block_paths = []
+        script = ep["script"]
+        block_paths, durations = [], []
         for i, block_id in enumerate(block_ids):
             path = work / f"block_{i}.mp4"
             _download_asset(result_url(get_job_result(block_id)), path)
+            blk = script[i]
+            is_talk = blk.get("shot", "talk") == "talk" and blk.get("speaker")
+            if is_talk and not _has_audio(path):
+                # Fail loudly — never ship a silent talking block again.
+                raise RuntimeError(
+                    f"block {i} is a talking block but came back with NO audio "
+                    f"(job {block_id}) — regenerate before assembling"
+                )
+            if not _has_audio(path):
+                silent = work / f"block_{i}_silent.mp4"
+                _ffmpeg(["-i", str(path), "-f", "lavfi",
+                         "-i", "anullsrc=channel_layout=mono:sample_rate=44100",
+                         "-shortest", "-c:v", "copy", "-c:a", "aac", str(silent)])
+                path = silent
             block_paths.append(path)
+            durations.append(_video_duration(path))
 
         listfile = work / "concat.txt"
         listfile.write_text("".join(f"file '{p}'\n" for p in block_paths))
-        talking = all(b.get("speaker") for b in ep["script"])
         base = work / "base.mp4"
-        if talking:
-            # Blocks carry their own native dialogue audio — keep it.
-            _ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listfile),
-                     "-c:v", "libx264", "-pix_fmt", "yuv420p",
-                     "-c:a", "aac", str(base)])
-        else:
-            narration_path = work / "narration.mp3"
-            _download_asset(result_url(get_job_result(jobs["narration"])), narration_path)
-            concat = work / "video_noaudio.mp4"
-            _ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listfile),
-                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an", str(concat)])
-            _ffmpeg(["-i", str(concat), "-i", str(narration_path),
-                     "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac",
-                     "-shortest", str(base)])
+        _ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listfile),
+                 "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                 "-c:a", "aac", str(base)])
 
         final = outdir / "final.mp4"
-        overlays = _make_overlays(ep["script"], work, _video_size(base))
+        overlays = _make_overlays(script, work, _video_size(base), durations)
         if overlays:
             args = ["-i", str(base)]
             for png, _, _ in overlays:
@@ -246,14 +284,37 @@ def _video_size(path) -> tuple:
     return int(out[0]), int(out[1])
 
 
-def _make_overlays(script: list, work, size: tuple) -> list:
+def _video_duration(path) -> float:
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-show_entries", "format=duration",
+         "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    return float(out)
+
+
+def _has_audio(path) -> bool:
+    out = subprocess.run(
+        ["ffprobe", "-v", "error", "-select_streams", "a",
+         "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(path)],
+        capture_output=True, text=True,
+    ).stdout.strip()
+    return bool(out)
+
+
+def _make_overlays(script: list, work, size: tuple, durations: list) -> list:
     """Render each block's on_screen_text as a transparent PNG (voxel style:
     ink text on a cream box, bottom third) — composited via ffmpeg's core
-    `overlay` filter, since this ffmpeg build lacks drawtext. Returns
-    [(png_path, start_s, end_s)]."""
+    `overlay` filter, since this ffmpeg build lacks drawtext. Timing windows
+    come from the blocks' REAL durations (models often return shorter clips
+    than requested). Returns [(png_path, start_s, end_s)]."""
     from PIL import Image, ImageDraw, ImageFont
 
     width, height = size
+    starts, t = [], 0.0
+    for d in durations:
+        starts.append(t)
+        t += d
     overlays = []
     for i, block in enumerate(script):
         text = (block.get("on_screen_text") or "").strip()
@@ -282,7 +343,7 @@ def _make_overlays(script: list, work, size: tuple) -> list:
                       font=font, fill=(35, 40, 58, 255))
         png = work / f"overlay_{i}.png"
         img.save(png)
-        overlays.append((png, i * BLOCK_SECONDS, (i + 1) * BLOCK_SECONDS))
+        overlays.append((png, round(starts[i], 2), round(starts[i] + durations[i], 2)))
     return overlays
 
 

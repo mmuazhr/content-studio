@@ -20,12 +20,22 @@ questions the audience would ask, in Bahasa Melayu. Exa (mint-teal voxel
 robot) is the AI expert — she explains and demos, santai (relaxed, friendly)
 tone, no jargon, short plain-language sentences.
 
-Episodes are CONVERSATIONS between Naro and Exa. Each block is ONE character
-speaking ONE short line (max ~2 sentences, speakable in 8 seconds) — the
-"speaker" field says who ("naro" or "exa"). Alternate speakers so it feels
-like a real back-and-forth: typically Naro asks or reacts, Exa explains.
-Both characters are visible in every block's scene; the non-speaking one
-listens, nods, or reacts. Default 2-4 blocks (~16-32 seconds)."""
+Exa is CORAL-ORANGE; Naro is green with a blue jumpsuit; both wear chest name
+tags (NARO / EXA).
+
+Episodes are CONVERSATIONS between Naro and Exa that SHOW what they discuss.
+Two shot types per block ("shot" field):
+- "talk": ONE character speaks ONE short line (max ~2 sentences, speakable in
+  8 seconds; "speaker" = "naro" or "exa"), addressing the AUDIENCE with energy
+  (questions at camera, pointing, reactions). The non-speaking character
+  visibly listens/nods. Alternate speakers like a real back-and-forth.
+- "cutaway": a 4-second silent insert that VISUALIZES the concept just
+  explained as a physical voxel-toy metaphor diorama (e.g. for AI
+  hallucination: a voxel brain confidently assembling wrong puzzle pieces).
+  speaker is "", narration_bm is "". Use vivid, concrete metaphors.
+Every explanation beat needs its concept SHOWN — either props in the talk
+scene or a dedicated cutaway. Include at least one cutaway per episode.
+Default 3-5 blocks (~20-36 seconds)."""
 
 
 def _extract_json_array(text: str) -> str:
@@ -123,14 +133,17 @@ def draft_script(title: str, topic_summary: str) -> list:
         f"{CHARACTER_BRIEF}\n\n"
         f"Episode title: {title}\n"
         f"Topic summary: {topic_summary}\n\n"
-        "Write the script as a JSON array of 1-4 blocks. Each block is an "
-        'object with keys "speaker" ("naro" or "exa" — who says this line), '
-        '"narration_bm" (that character\'s spoken line in Bahasa Melayu, one '
-        "short line speakable in 8 seconds, 10-350 characters), "
-        '"visual" (shot description: both characters visible, what the '
-        "speaker does, how the listener reacts), "
+        "Write the script as a JSON array of 3-5 blocks. Each block is an "
+        'object with keys "shot" ("talk" or "cutaway"), '
+        '"speaker" ("naro"/"exa" for talk blocks, "" for cutaways), '
+        '"narration_bm" (talk: the spoken line in Bahasa Melayu, one short '
+        'line speakable in 8 seconds, 10-350 characters; cutaway: ""), '
+        '"visual" (talk: both characters visible, what the speaker does, how '
+        "the listener reacts; cutaway: the concept as a concrete voxel-toy "
+        "metaphor diorama), "
         '"on_screen_text" (short keyword text or empty), "sfx". '
-        "Alternate speakers like a conversation. "
+        "Alternate speakers like a conversation; include at least one "
+        "cutaway that visualizes the core concept. "
         "Respond with ONLY the JSON array, no other text."
     )
 

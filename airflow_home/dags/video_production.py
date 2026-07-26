@@ -72,9 +72,11 @@ def video_production():
         sb = settings.supabase()
         with _episode_guard(sb, ref["episode_id"]):
             ep = get_episode(sb, ref["episode_id"])
-            if all(b.get("speaker") for b in ep["script"]):
-                # Talking-character mode: dialogue audio comes from the video
-                # model itself — no narrator TTS needed.
+            talk_blocks = [b for b in ep["script"] if b.get("shot", "talk") == "talk"]
+            if talk_blocks and all(b.get("speaker") for b in talk_blocks):
+                # Talking-character mode (format v3): dialogue audio comes from
+                # the video model itself — no narrator TTS needed. Cutaway
+                # blocks are silent by design.
                 return ref
             generate_narration(sb, ep)
         return ref
