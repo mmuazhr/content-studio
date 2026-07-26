@@ -13,8 +13,8 @@ def _ref(path: str) -> str:
     return str(settings.assets_root / "mascot-concepts" / path)
 
 
-NARO_REF = "alien-a.png"
-EXA_REF = "robot-b.png"
+# duo-v2: coral Exa + chest name tags (canon since 2026-07-26, job ff2361ae)
+DUO_REF = "duo-v2.png"
 
 # Higgsfield job types (CLI surface: `higgsfield generate create <job_type>`),
 # verified against the live CLI on 2026-07-26. Block pipeline: a Nano Banana
@@ -37,7 +37,7 @@ CHAR_VOICE = {
         "the camera and speaks with a curious, excited child-like voice"
     ),
     "exa": (
-        "Exa, the mint-teal voxel robot with the TV-screen face, looks at the "
+        "Exa, the coral-orange voxel robot with the TV-screen face, looks at the "
         "camera and speaks with a warm, cheerful child-like voice with a "
         "slight friendly robotic chirp"
     ),
@@ -120,8 +120,7 @@ def generate_block(sb, ep, idx: int) -> str:
                 "cream background, clean centered composition, generous "
                 "headroom, no text anywhere in the image."
             ),
-            "--image-references", _ref(NARO_REF),
-            "--image-references", _ref(EXA_REF),
+            "--image-references", _ref(DUO_REF),
             "--aspect_ratio", "9:16",
             "--wait",
         ])

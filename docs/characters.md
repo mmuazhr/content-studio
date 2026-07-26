@@ -9,10 +9,14 @@ lighting, beige voxel tile platform, warm cream background — style locked from
 4 user-provided reference images).
 
 ## The duo
-| Character | Design | Role |
+| Character | Design (v2, canon since 2026-07-26) | Role |
 |---|---|---|
-| **Alien** (from concept "alien-a") | Green voxel alien, round transparent glass dome helmet, small antenna with cube tip, blue voxel jumpsuit, big black pixel eyes, happy pixel smile | The curious learner — asks the questions the audience would ask |
-| **Robot** (from concept "robot-b") | Mint-teal voxel robot, rectangular TV-monitor face with black pixel eyes/smile, small square antenna, grey voxel laptop | The AI expert — explains, demos, teaches |
+| **Naro** | Green voxel alien, round transparent glass dome helmet, exactly ONE antenna with cube tip, blue voxel jumpsuit with white "NARO" chest name tag, big black pixel eyes, happy pixel smile | The curious learner — asks the questions the audience would ask |
+| **Exa** | **Coral-orange** voxel robot (recolored from mint-teal for contrast), rectangular TV-monitor face (pale screen, black pixel eyes/smile), small square antenna, white "EXA" chest name tag, grey voxel laptop | The AI expert — explains, demos, teaches |
+
+**Canonical reference for ALL generations:** `assets/mascot-concepts/duo-v2.png`
+(Higgsfield job `ff2361ae-24ec-40e7-9ae6-eeafe57302dd`). The v1 teal-Exa images
+below are historical only.
 
 Names: **Naro** = the alien (curious learner). **Exa** = the robot (AI expert).
 
