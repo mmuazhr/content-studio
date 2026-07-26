@@ -111,6 +111,12 @@ def video_production():
                 local_path = ""
                 caption = f"[dry-run] {ep['title']}"
                 credits_note = "dry-run: no credits spent"
+            elif assembly_job.startswith("local:"):
+                # Assembled locally with ffmpeg — file already at its final home.
+                local_path = assembly_job[len("local:"):]
+                video_url = f"file://{local_path}"
+                caption = write_caption(ep["title"], ep["script"])
+                credits_note = "live: stills + blocks + narration generated"
             else:
                 video_url = _assembly_asset_url(assembly_job)
                 local_path = _download(video_url, ep)
