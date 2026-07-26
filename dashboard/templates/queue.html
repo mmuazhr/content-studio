@@ -3,14 +3,17 @@
 {% block content %}
 <h2>Review Queue</h2>
 
-{% if not episodes %}
-  <div class="cs-card cs-empty">
-    Nothing waiting for review. Run <code>topic_research</code> in Airflow, or seed EP00.
-  </div>
-{% endif %}
+{% set script_eps = episodes | selectattr('status', 'equalto', 'pending_script_review') | list %}
+{% set video_eps = episodes | selectattr('status', 'in', ['pending_video_review', 'generating']) | list %}
+{% set error_eps = episodes | selectattr('status', 'equalto', 'error') | list %}
 
-<div class="cs-grid">
-  {% for ep in episodes %}
+<div class="cs-tabs">
+  <button class="cs-tab is-active" data-tab="script">Script Review ({{ script_eps|length }})</button>
+  <button class="cs-tab" data-tab="video">Video Review ({{ video_eps|length }})</button>
+  {% if error_eps %}<button class="cs-tab cs-tab--error" data-tab="errors">Errors ({{ error_eps|length }})</button>{% endif %}
+</div>
+
+{% macro card(ep) %}
   <div class="cs-card">
     <h3>
       {% if ep.ep_number is not none %}EP{{ '%02d' % ep.ep_number }} — {% endif %}{{ ep.title }}
@@ -23,6 +26,38 @@
     <p class="summary">{{ ep.topic_summary }}</p>
     <a class="cs-btn cs-btn--ghost" href="/episode/{{ ep.id }}">Open</a>
   </div>
-  {% endfor %}
+{% endmacro %}
+
+<div class="cs-tabpane" id="tab-script">
+  {% if not script_eps %}<div class="cs-card cs-empty">No scripts waiting. Run <code>topic_research</code> in Airflow.</div>{% endif %}
+  <div class="cs-grid">{% for ep in script_eps %}{{ card(ep) }}{% endfor %}</div>
 </div>
+<div class="cs-tabpane" id="tab-video" hidden>
+  {% if not video_eps %}<div class="cs-card cs-empty">Nothing generating or awaiting video review.</div>{% endif %}
+  <div class="cs-grid">{% for ep in video_eps %}{{ card(ep) }}{% endfor %}</div>
+</div>
+{% if error_eps %}
+<div class="cs-tabpane" id="tab-errors" hidden>
+  <div class="cs-grid">{% for ep in error_eps %}{{ card(ep) }}{% endfor %}</div>
+</div>
+{% endif %}
+
+<style>
+  .cs-tabs { display: flex; gap: 8px; margin: 18px 0; }
+  .cs-tab { font: bold 13px "Courier New", monospace; text-transform: uppercase;
+    padding: 8px 16px; border: 3px solid var(--cs-ink); border-radius: 8px 8px 0 0;
+    background: var(--cs-tile); cursor: pointer; box-shadow: 3px 3px 0 rgba(35,40,58,.15); }
+  .cs-tab.is-active { background: var(--cs-exa); box-shadow: none; transform: translateY(2px); }
+  .cs-tab--error { background: var(--cs-error); color: #fffdf9; }
+</style>
+<script>
+  document.querySelectorAll(".cs-tab").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      document.querySelectorAll(".cs-tab").forEach(function (b) { b.classList.remove("is-active"); });
+      document.querySelectorAll(".cs-tabpane").forEach(function (p) { p.hidden = true; });
+      btn.classList.add("is-active");
+      document.getElementById("tab-" + btn.dataset.tab).hidden = false;
+    });
+  });
+</script>
 {% endblock %}
