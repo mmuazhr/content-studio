@@ -2,6 +2,7 @@ class ScriptValidationError(ValueError): ...
 
 REQUIRED = ("narration_bm", "visual")
 OPTIONAL = ("on_screen_text", "sfx")
+SPEAKERS = ("", "naro", "exa")  # "" = off-screen narrator
 
 
 def validate_script(script):
@@ -24,5 +25,11 @@ def validate_script(script):
             if not isinstance(v, str):
                 raise ScriptValidationError(f"block {i} {k} must be string")
             blk[k] = v.strip()
+        speaker = b.get("speaker", "")
+        if not isinstance(speaker, str) or speaker.strip().lower() not in SPEAKERS:
+            raise ScriptValidationError(
+                f"block {i} speaker must be one of {SPEAKERS}"
+            )
+        blk["speaker"] = speaker.strip().lower()
         out.append(blk)
     return out

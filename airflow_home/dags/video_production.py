@@ -71,7 +71,12 @@ def video_production():
         from pipeline.higgsfield_runner import generate_narration
         sb = settings.supabase()
         with _episode_guard(sb, ref["episode_id"]):
-            generate_narration(sb, get_episode(sb, ref["episode_id"]))
+            ep = get_episode(sb, ref["episode_id"])
+            if all(b.get("speaker") for b in ep["script"]):
+                # Talking-character mode: dialogue audio comes from the video
+                # model itself — no narrator TTS needed.
+                return ref
+            generate_narration(sb, ep)
         return ref
 
     @task

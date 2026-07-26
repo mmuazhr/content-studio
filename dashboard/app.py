@@ -153,7 +153,11 @@ async def decide(
                 blocks = validate_script(posted)
             except ScriptValidationError as exc:
                 return _redirect(f"/episode/{episode_id}", error=str(exc))
-            if blocks != ep.get("script"):
+            try:
+                stored = validate_script(ep.get("script") or [])
+            except ScriptValidationError:
+                stored = ep.get("script")
+            if blocks != stored:
                 _save_script(sb, episode_id, blocks)
                 edited = True
 

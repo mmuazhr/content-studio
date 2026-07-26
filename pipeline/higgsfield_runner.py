@@ -23,7 +23,25 @@ EXA_REF = "robot-b.png"
 AUDIO_JOB_TYPE = os.getenv("HF_AUDIO_JOB", "text2speech_v2")
 TTS_VARIANT = os.getenv("HF_TTS_VARIANT", "elevenlabs")
 STILL_JOB_TYPE = os.getenv("HF_STILL_JOB", "nano_banana_2")
-VIDEO_JOB_TYPE = os.getenv("HF_VIDEO_JOB", "kling3_0")
+# veo3_1_lite: native speech + lipsync from dialogue prompts, start_image anchor,
+# 8cr per 8s block (verified 2026-07-26).
+VIDEO_JOB_TYPE = os.getenv("HF_VIDEO_JOB", "veo3_1_lite")
+BLOCK_SECONDS = 8
+
+# Prompt templates hardened per Veo/Kling prompting research (2026-07-26):
+# one speaker per clip, colon dialogue syntax, tone adjectives, motion-only
+# for image-to-video, explicit no-subtitles (Veo burns captions otherwise).
+CHAR_VOICE = {
+    "naro": (
+        "Naro, the small green voxel alien in the glass dome helmet, looks at "
+        "the camera and speaks with a curious, excited child-like voice"
+    ),
+    "exa": (
+        "Exa, the mint-teal voxel robot with the TV-screen face, looks at the "
+        "camera and speaks with a warm, cheerful child-like voice with a "
+        "slight friendly robotic chirp"
+    ),
+}
 
 
 def ensure_job(sb, episode_id, slot: str, submit_fn) -> str:
@@ -90,17 +108,17 @@ def generate_narration(sb, ep) -> str:
 
 def generate_block(sb, ep, idx: int) -> str:
     block = ep["script"][idx]
-    scene = block["visual"]
-    if block.get("on_screen_text"):
-        scene = f"{scene} | on-screen text: {block['on_screen_text']}"
+    scene = block["visual"]  # on-screen text is rendered by ffmpeg, never baked
 
     def submit_still():
         result = run_cli([
             "generate", "create", STILL_JOB_TYPE,
             "--prompt", (
-                f"{scene}. Same exact voxel toy style as the reference images: "
-                "chunky cube-built characters, matte clay-plastic render, soft "
-                "studio lighting, beige voxel tile platform, warm cream background."
+                f"{scene}. Chunky voxel toy diorama matching the reference "
+                "characters exactly: cube-built figures, matte clay-plastic "
+                "render, soft studio lighting, beige voxel tile platform, warm "
+                "cream background, clean centered composition, generous "
+                "headroom, no text anywhere in the image."
             ),
             "--image-references", _ref(NARO_REF),
             "--image-references", _ref(EXA_REF),
@@ -110,6 +128,24 @@ def generate_block(sb, ep, idx: int) -> str:
         return result["id"]
 
     still_id = ensure_job(sb, ep["id"], f"block_{idx}_still", submit_still)
+
+    speaker = block.get("speaker", "")
+    if speaker:
+        line = block["narration_bm"]
+        prompt = (
+            f'{CHAR_VOICE[speaker]}, saying in Bahasa Melayu: "{line}". '
+            "The character's mouth movement matches the words. Gentle "
+            "stop-motion toy animation, subtle idle bobbing, slow camera "
+            "push-in. Soft cheerful room ambience. No subtitles, no captions, "
+            "no text on screen."
+        )
+        audio = "true"
+    else:
+        prompt = (
+            "Gentle stop-motion toy animation, subtle idle motion, slow camera "
+            "push-in. No subtitles, no captions, no text on screen."
+        )
+        audio = "false"
 
     def submit_video():
         if settings.dry_run:
@@ -123,11 +159,11 @@ def generate_block(sb, ep, idx: int) -> str:
         _download_asset(result_url(get_job_result(still_id)), still_path)
         result = run_cli([
             "generate", "create", VIDEO_JOB_TYPE,
-            "--prompt", f"Gentle toy-stop-motion style animation: {scene}. Subtle idle motion, slow camera push-in.",
+            "--prompt", prompt,
             "--start-image", str(still_path),
             "--aspect_ratio", "9:16",
-            "--duration", "10",
-            "--sound", "off",
+            "--duration", str(BLOCK_SECONDS),
+            "--generate_audio", audio,
             "--wait",
         ])
         return result["id"]
@@ -150,8 +186,6 @@ def assemble(sb, ep) -> str:
         work = outdir / "work"
         work.mkdir(parents=True, exist_ok=True)
 
-        narration_path = work / "narration.mp3"
-        _download_asset(result_url(get_job_result(jobs["narration"])), narration_path)
         block_paths = []
         for i, block_id in enumerate(block_ids):
             path = work / f"block_{i}.mp4"
@@ -160,16 +194,56 @@ def assemble(sb, ep) -> str:
 
         listfile = work / "concat.txt"
         listfile.write_text("".join(f"file '{p}'\n" for p in block_paths))
-        concat = work / "video_noaudio.mp4"
-        _ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listfile),
-                 "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an", str(concat)])
+        talking = all(b.get("speaker") for b in ep["script"])
+        base = work / "base.mp4"
+        if talking:
+            # Blocks carry their own native dialogue audio — keep it.
+            _ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listfile),
+                     "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                     "-c:a", "aac", str(base)])
+        else:
+            narration_path = work / "narration.mp3"
+            _download_asset(result_url(get_job_result(jobs["narration"])), narration_path)
+            concat = work / "video_noaudio.mp4"
+            _ffmpeg(["-f", "concat", "-safe", "0", "-i", str(listfile),
+                     "-c:v", "libx264", "-pix_fmt", "yuv420p", "-an", str(concat)])
+            _ffmpeg(["-i", str(concat), "-i", str(narration_path),
+                     "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac",
+                     "-shortest", str(base)])
+
         final = outdir / "final.mp4"
-        _ffmpeg(["-i", str(concat), "-i", str(narration_path),
-                 "-map", "0:v", "-map", "1:a", "-c:v", "copy", "-c:a", "aac",
-                 "-shortest", str(final)])
+        filters = _text_overlays(ep["script"], work)
+        if filters:
+            _ffmpeg(["-i", str(base), "-vf", filters,
+                     "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                     "-c:a", "copy", str(final)])
+        else:
+            _ffmpeg(["-i", str(base), "-c", "copy", str(final)])
         return f"local:{final}"
 
     return ensure_job(sb, ep["id"], "assembly", submit)
+
+
+def _text_overlays(script: list, work) -> str:
+    """drawtext filters rendering each block's on_screen_text during its time
+    window — crisp overlay text instead of model-baked captions. Voxel-styled:
+    ink text on a translucent cream box, bottom third, TikTok-safe margins."""
+    parts = []
+    for i, block in enumerate(script):
+        text = (block.get("on_screen_text") or "").strip()
+        # drawtext can't render emoji; keep clean printable text only.
+        text = "".join(ch for ch in text if ord(ch) < 0x2190).strip()
+        if not text:
+            continue
+        textfile = work / f"overlay_{i}.txt"
+        textfile.write_text(text)
+        start, end = i * BLOCK_SECONDS, (i + 1) * BLOCK_SECONDS
+        parts.append(
+            f"drawtext=textfile='{textfile}':font=Helvetica:fontsize=58:"
+            f"fontcolor=0x23283a:box=1:boxcolor=0xf4efe6@0.88:boxborderw=22:"
+            f"x=(w-text_w)/2:y=h*0.76:enable='between(t,{start},{end})'"
+        )
+    return ",".join(parts)
 
 
 def _download_asset(url: str, dest) -> None:
