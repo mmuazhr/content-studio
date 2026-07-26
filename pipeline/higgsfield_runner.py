@@ -10,6 +10,11 @@ from pipeline.db import get_episode
 NARO_REF_JOB_ID = "6f818645-197a-4b31-a9f3-a41ead837de5"
 EXA_REF_JOB_ID = "656394a8-98f3-4357-9219-0079086063f8"
 
+# Higgsfield job types (CLI surface: `higgsfield generate create <job_type>`).
+# Overridable via env; verify params with `higgsfield model get <jst>` after login.
+AUDIO_JOB_TYPE = os.getenv("HF_AUDIO_JOB", "text2speech_v2")
+VIDEO_JOB_TYPE = os.getenv("HF_VIDEO_JOB", "seedance_2_0")
+
 
 def ensure_job(sb, episode_id, slot: str, submit_fn) -> str:
     ep = get_episode(sb, episode_id)
@@ -31,7 +36,11 @@ def run_cli(args: list) -> dict:
         text=True,
         check=True,
     )
-    return json.loads(result.stdout)
+    payload = json.loads(result.stdout)
+    # `--wait --json` prints the final job object array; normalize to one dict.
+    if isinstance(payload, list):
+        payload = payload[0]
+    return payload
 
 
 def get_job_result(job_id: str) -> dict:
@@ -45,9 +54,11 @@ def generate_narration(sb, ep) -> str:
 
     def submit():
         result = run_cli([
-            "generate-audio",
-            "--voice", voice_id,
-            "--text", narration_text,
+            "generate", "create", AUDIO_JOB_TYPE,
+            "--prompt", narration_text,
+            "--voice_id", voice_id,
+            "--voice_type", "preset",
+            "--wait",
         ])
         return result["id"]
 
@@ -62,11 +73,13 @@ def generate_block(sb, ep, idx: int) -> str:
 
     def submit():
         result = run_cli([
-            "generate-video",
-            "--aspect-ratio", "9:16",
-            "--character-ref", NARO_REF_JOB_ID,
-            "--character-ref", EXA_REF_JOB_ID,
+            "generate", "create", VIDEO_JOB_TYPE,
             "--prompt", prompt,
+            "--image-references", NARO_REF_JOB_ID,
+            "--image-references", EXA_REF_JOB_ID,
+            "--aspect_ratio", "9:16",
+            "--duration", "10",
+            "--wait",
         ])
         return result["id"]
 
@@ -78,10 +91,15 @@ def assemble(sb, ep) -> str:
     block_ids = [jobs[f"block_{i}"] for i in range(len(ep["script"]))]
 
     def submit():
-        args = ["assemble", "--narration", jobs["narration"]]
-        for block_id in block_ids:
-            args += ["--block", block_id]
-        result = run_cli(args)
-        return result["id"]
+        if not settings.dry_run:
+            # The stitching surface (explainer workflow vs local ffmpeg) can only
+            # be verified against a logged-in CLI — finalized at first live run.
+            # See docs/uat-checklist.md go-live section.
+            raise RuntimeError(
+                "live assembly surface not yet verified: run "
+                "`higgsfield workflow list` after login and wire this call "
+                f"(blocks: {block_ids}, narration: {jobs.get('narration')})"
+            )
+        return run_cli(["assemble-dry"])["id"]
 
     return ensure_job(sb, ep["id"], "assembly", submit)
