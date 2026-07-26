@@ -201,6 +201,10 @@ def generate_block(sb, ep, idx: int) -> str:
                 "--duration", str(TALK_SECONDS),
                 "--wait",
             ]
+            if "lite" in TALK_JOB_TYPE:
+                # veo3_1 has always-on native audio (no param); the Lite tier
+                # exposes generate_audio and DEFAULTS TO OFF — force it on.
+                args[-1:-1] = ["--generate_audio", "true"]
         return run_cli(args)["id"]
 
     return ensure_job(sb, ep["id"], f"block_{idx}", submit_video)
