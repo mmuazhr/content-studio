@@ -28,6 +28,15 @@ Both characters are visible in every block's scene; the non-speaking one
 listens, nods, or reacts. Default 2-4 blocks (~16-32 seconds)."""
 
 
+def _extract_json_array(text: str) -> str:
+    """Models sometimes wrap JSON in markdown fences or prose — cut to the
+    outermost JSON array before parsing."""
+    start, end = text.find("["), text.rfind("]")
+    if start != -1 and end > start:
+        return text[start:end + 1]
+    return text.strip()
+
+
 def _client() -> anthropic.Anthropic:
     return anthropic.Anthropic(api_key=settings.anthropic_key)
 
@@ -99,7 +108,7 @@ def propose_topics(past_titles: list, rejection_notes: list, n: int = 3) -> list
 
     def parse(text: str) -> list:
         try:
-            data = json.loads(text)
+            data = json.loads(_extract_json_array(text))
         except json.JSONDecodeError as exc:
             raise ValueError(f"invalid JSON: {exc}") from exc
         if not isinstance(data, list) or not data:
@@ -127,7 +136,7 @@ def draft_script(title: str, topic_summary: str) -> list:
 
     def parse(text: str) -> list:
         try:
-            data = json.loads(text)
+            data = json.loads(_extract_json_array(text))
         except json.JSONDecodeError as exc:
             raise ScriptValidationError(f"invalid JSON: {exc}") from exc
         return validate_script(data)
