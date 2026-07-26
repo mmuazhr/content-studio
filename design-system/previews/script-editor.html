@@ -1,0 +1,46 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>content-studio — Script Editor</title>
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 24px; background: var(--cs-bg); }
+  .cs-card { max-width: 560px; }
+  .block { margin-bottom: 16px; }
+  .block h3 { margin: 0 0 6px; font-size: 13px; text-transform: uppercase; }
+  textarea {
+    width: 100%;
+    font-family: "Courier New", monospace;
+    font-size: 13px;
+    border: 3px solid var(--cs-ink);
+    border-radius: 6px;
+    padding: 8px;
+    resize: vertical;
+  }
+</style>
+</head>
+<body>
+  <div class="cs-card">
+    <h2>EP00 — Script Editor</h2>
+    <span class="cs-chip cs-chip--pending_script_review">Pending Script Review</span>
+
+    <div class="block" style="margin-top: 16px;">
+      <h3>Block 1 — Hook (0–10s)</h3>
+      <textarea rows="3">Korang selalu dengar orang cakap pasal AI... tapi tak berapa faham benda tu sebenarnya apa?</textarea>
+    </div>
+
+    <div class="block">
+      <h3>Block 2 — Introduce + CTA (10–20s)</h3>
+      <textarea rows="3">Kenalkan — Naro dan Exa! Setiap minggu kitorang terangkan AI dalam Bahasa Melayu. Simple, santai, takde jargon. Jom belajar sama-sama!</textarea>
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <button class="cs-btn cs-btn--ghost">Save Edits</button>
+      <button class="cs-btn cs-btn--approve">Approve Script</button>
+      <button class="cs-btn cs-btn--reject">Reject</button>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>content-studio — Episode Card</title>
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 24px; background: var(--cs-bg); }
+  .cs-card { max-width: 360px; }
+  .cs-card h2 { margin: 0 0 4px; font-size: 16px; }
+  .cs-card .meta { font-size: 12px; margin-bottom: 10px; }
+  .cs-card .row { display: flex; gap: 8px; margin-top: 10px; }
+</style>
+</head>
+<body>
+  <div class="cs-card">
+    <h2>EP00 — Kenalkan Naro &amp; Exa</h2>
+    <div class="meta">intro · 9:16 · ~20s</div>
+    <span class="cs-chip cs-chip--pending_script_review">Pending Script Review</span>
+    <div class="row">
+      <button class="cs-btn cs-btn--approve">Approve</button>
+      <button class="cs-btn cs-btn--reject">Reject</button>
+      <button class="cs-btn cs-btn--ghost">Backlog</button>
+    </div>
+  </div>
+</body>
+</html>

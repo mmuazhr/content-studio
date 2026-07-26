@@ -1,0 +1,39 @@
+<!-- @dsCard group="Components" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>content-studio — Approval Bar</title>
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 24px; background: var(--cs-bg); }
+  .bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    max-width: 520px;
+  }
+  .bar .status { flex: 1; }
+  .bar .actions { display: flex; gap: 8px; }
+  .note {
+    max-width: 520px;
+    margin-top: 12px;
+    font-family: "Courier New", monospace;
+    font-size: 12px;
+  }
+</style>
+</head>
+<body>
+  <div class="cs-card">
+    <div class="bar">
+      <span class="status cs-chip cs-chip--pending_video_review">Pending Video Review</span>
+      <div class="actions">
+        <button class="cs-btn cs-btn--approve">Approve Video</button>
+        <button class="cs-btn cs-btn--reject">Reject</button>
+        <button class="cs-btn cs-btn--ghost">Backlog</button>
+      </div>
+    </div>
+    <div class="note">Note (optional): "Confetti burst felt too fast, otherwise good."</div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,41 @@
+<!-- @dsCard group="Foundations" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>content-studio — Color Tokens</title>
+<link rel="stylesheet" href="../tokens.css" />
+<style>
+  body { padding: 24px; background: var(--cs-bg); }
+  h1 { font-size: 18px; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 16px; }
+  .swatch {
+    width: 140px;
+    border: 4px solid var(--cs-ink);
+    border-radius: 10px;
+    box-shadow: 4px 4px 0 rgba(35, 40, 58, .25);
+    overflow: hidden;
+  }
+  .swatch .fill { height: 70px; }
+  .swatch .label {
+    background: #fffdf9;
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    padding: 6px 8px;
+  }
+</style>
+</head>
+<body>
+  <h1>Naro &amp; Exa — Voxel Palette</h1>
+  <div class="swatches">
+    <div class="swatch"><div class="fill" style="background:var(--cs-bg)"></div><div class="label">--cs-bg</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-tile)"></div><div class="label">--cs-tile</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-ink)"></div><div class="label">--cs-ink</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-naro)"></div><div class="label">--cs-naro</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-naro-suit)"></div><div class="label">--cs-naro-suit</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-exa)"></div><div class="label">--cs-exa</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-accent)"></div><div class="label">--cs-accent</div></div>
+    <div class="swatch"><div class="fill" style="background:var(--cs-error)"></div><div class="label">--cs-error</div></div>
+  </div>
+</body>
+</html>
