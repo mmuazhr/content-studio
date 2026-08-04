@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mascot Concepts — Compare</title>
+<style>
+  :root { --bg: #f4efe6; --ink: #23283a; --card: #fffdf9; --accent: #e0803a; }
+  * { box-sizing: border-box; margin: 0; }
+  body { background: var(--bg); color: var(--ink); font: 16px/1.5 -apple-system, "Segoe UI", sans-serif; padding: 32px 24px 64px; }
+  h1 { text-align: center; font-size: 1.6rem; margin-bottom: 4px; }
+  p.sub { text-align: center; color: #6b7080; margin-bottom: 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; max-width: 1400px; margin: 0 auto; }
+  .card { background: var(--card); border-radius: 14px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,.07); cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(0,0,0,.12); }
+  .card img { width: 100%; display: block; }
+  .card .body { padding: 14px 16px 18px; }
+  .card h2 { font-size: 1.05rem; margin-bottom: 4px; }
+  .card .tag { display: inline-block; font-size: .72rem; letter-spacing: .04em; text-transform: uppercase; background: var(--accent); color: #fff; border-radius: 999px; padding: 2px 10px; margin-bottom: 8px; }
+  .card p { font-size: .88rem; color: #5a5f6e; }
+  /* lightbox */
+  #lb { position: fixed; inset: 0; background: rgba(20,22,30,.88); display: none; align-items: center; justify-content: center; z-index: 10; }
+  #lb.open { display: flex; }
+  #lb img { max-width: 92vw; max-height: 92vh; border-radius: 10px; }
+  #lb span { position: fixed; top: 18px; right: 26px; color: #fff; font-size: 2rem; cursor: pointer; }
+</style>
+</head>
+<body>
+<h1>content-studio · mascot concepts</h1>
+<p class="sub">Click any card to view full size (2048×2048). Generated with Higgsfield · Nano Banana · 4 style refs.</p>
+<div class="grid">
+  <div class="card" onclick="openLb('alien-a.png')">
+    <img src="alien-a.png" alt="Alien A — round dome helmet, waving">
+    <div class="body">
+      <span class="tag">Alien A</span>
+      <h2>Round dome helmet</h2>
+      <p>Classic take — green voxel alien, round glass dome, blue jumpsuit, waving. Closest to the original alien brainstorm.</p>
+    </div>
+  </div>
+  <div class="card" onclick="openLb('alien-b.png')">
+    <img src="alien-b.png" alt="Alien B — cubic glass helmet, waving">
+    <div class="body">
+      <span class="tag">Alien B</span>
+      <h2>Cubic glass helmet</h2>
+      <p>Same alien, but the helmet is a glass cube — everything speaks the voxel language. Most distinctive as a brand mark.</p>
+    </div>
+  </div>
+  <div class="card" onclick="openLb('robot-a.png')">
+    <img src="robot-a.png" alt="Robot A — soft face, laptop">
+    <div class="body">
+      <span class="tag">Robot A</span>
+      <h2>Soft-face robot</h2>
+      <p>Mint-teal robot presenter with a friendly soft face, holding a voxel laptop. Warm and approachable.</p>
+    </div>
+  </div>
+  <div class="card" onclick="openLb('robot-b.png')">
+    <img src="robot-b.png" alt="Robot B — TV face, laptop">
+    <div class="body">
+      <span class="tag">Robot B</span>
+      <h2>TV-face robot</h2>
+      <p>Teal robot with a monitor/TV-style face — reads instantly as "AI explainer". Strong fit for the channel topic.</p>
+    </div>
+  </div>
+</div>
+<div id="lb" onclick="this.classList.remove('open')"><span>&times;</span><img id="lbimg" src="" alt=""></div>
+<script>
+  function openLb(src) {
+    document.getElementById('lbimg').src = src;
+    document.getElementById('lb').classList.add('open');
+  }
+</script>
+</body>
+</html>

@@ -2,5 +2,31 @@
 __pycache__/
 *.pyc
 .env
+.env.*
+!.env.example
 airflow_home/*
 !airflow_home/dags
+
+# Intermediate episode render work — large and regenerable from the
+# pipeline. Final cuts (assets/episodes/*/final.mp4) ARE tracked.
+assets/episodes/*/work/
+
+# Caches
+.pytest_cache/
+.ruff_cache/
+.coverage
+
+# Local databases (airflow.db etc.)
+*.db
+*.sqlite
+
+# Agent / tool config — .superpowers holds a local session token
+.claude/
+.superpowers/
+
+# Secrets
+*.pem
+*.key
+
+# macOS
+.DS_Store
