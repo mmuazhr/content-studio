@@ -49,6 +49,9 @@
   {% for block in ep.script %}
   <div class="block">
     <h4>Block {{ loop.index }}</h4>
+    <p class="cs-note">Shot: <code>{{ block.get('shot', 'talk') }}</code> · Speaker: <code>{{ block.get('speaker') or 'off-screen' }}</code></p>
+    <input type="hidden" name="shot" value="{{ block.get('shot', 'talk') }}" />
+    <input type="hidden" name="speaker" value="{{ block.get('speaker', '') }}" />
     <label>Narration (BM)</label>
     <textarea name="narration_bm" rows="3" {% if ep.status != 'pending_script_review' %}readonly{% endif %}>{{ block.narration_bm }}</textarea>
     <label>Visual</label>

@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urlencode
 
 import httpx
@@ -26,7 +27,7 @@ def test_trigger_dag_run_posts_conf_and_returns_run_id():
 
     assert run_id == "manual__2026-07-26T00:00:00+00:00"
     assert seen["url"].endswith("/api/v1/dags/video_production/dagRuns")
-    assert seen["body"] == '{"conf": {"episode_id": "ep-1"}}'
+    assert json.loads(seen["body"]) == {"conf": {"episode_id": "ep-1"}}
     assert seen["auth"].startswith("Basic ")
 
 

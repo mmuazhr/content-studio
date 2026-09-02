@@ -69,17 +69,26 @@ def _redirect(path: str, *, msg: str = "", error: str = "") -> RedirectResponse:
 
 
 def _blocks_from_form(form) -> list:
-    """Rebuild script blocks from the parallel per-field lists the editor posts."""
+    """Rebuild script blocks from the parallel per-field lists the editor posts.
+
+    ``shot`` and ``speaker`` are included even though the current editor keeps
+    them read-only. Dropping either field would silently turn format-v3
+    dialogue/cutaway scripts into the legacy shape during approval.
+    """
     narrations = form.getlist("narration_bm")
     visuals = form.getlist("visual")
     on_screen = form.getlist("on_screen_text")
     sfx = form.getlist("sfx")
+    shots = form.getlist("shot")
+    speakers = form.getlist("speaker")
     return [
         {
             "narration_bm": narrations[i],
             "visual": visuals[i] if i < len(visuals) else "",
             "on_screen_text": on_screen[i] if i < len(on_screen) else "",
             "sfx": sfx[i] if i < len(sfx) else "",
+            "shot": shots[i] if i < len(shots) else "talk",
+            "speaker": speakers[i] if i < len(speakers) else "",
         }
         for i in range(len(narrations))
     ]
