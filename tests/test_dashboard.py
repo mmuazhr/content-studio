@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urlencode
 
 import httpx
@@ -26,7 +27,7 @@ def test_trigger_dag_run_posts_conf_and_returns_run_id():
 
     assert run_id == "manual__2026-07-26T00:00:00+00:00"
     assert seen["url"].endswith("/api/v1/dags/video_production/dagRuns")
-    assert seen["body"] == '{"conf": {"episode_id": "ep-1"}}'
+    assert json.loads(seen["body"]) == {"conf": {"episode_id": "ep-1"}}
     assert seen["auth"].startswith("Basic ")
 
 
@@ -129,12 +130,16 @@ class FakeSB:
 
 SCRIPT = [
     {
+        "shot": "talk",
+        "speaker": "naro",
         "narration_bm": "Korang selalu dengar orang cakap pasal AI?",
         "visual": "Naro thinking on the voxel platform.",
         "on_screen_text": "AI tu apa?",
         "sfx": "lo-fi bed",
     },
     {
+        "shot": "talk",
+        "speaker": "exa",
         "narration_bm": "Kenalkan Naro dan Exa, setiap minggu kita belajar AI.",
         "visual": "Duo shot, Naro waves and Exa presents the laptop.",
         "on_screen_text": "",
@@ -193,6 +198,8 @@ def script_form(blocks, **extra):
     pairs += [("visual", b["visual"]) for b in blocks]
     pairs += [("on_screen_text", b["on_screen_text"]) for b in blocks]
     pairs += [("sfx", b["sfx"]) for b in blocks]
+    pairs += [("shot", b.get("shot", "talk")) for b in blocks]
+    pairs += [("speaker", b.get("speaker", "")) for b in blocks]
     pairs += list(extra.items())
     return urlencode(pairs)
 
@@ -227,6 +234,15 @@ def test_episode_detail_renders_timeline_and_blocks(client, sb):
     assert "cs-timeline" in response.text
     assert "is-current" in response.text
     assert "Korang selalu dengar" in response.text
+
+
+def test_script_editor_exposes_shot_and_speaker_controls(client, sb):
+    response = client.get("/episode/ep-1")
+
+    assert '<select name="shot">' in response.text
+    assert '<select name="speaker">' in response.text
+    assert ">Naro</option>" in response.text
+    assert ">Exa</option>" in response.text
 
 
 def test_script_approve_triggers_production_and_records_approval(client, sb, triggers):
@@ -364,6 +380,7 @@ def test_illegal_state_transition_surfaces_error_without_writing(client, sb, tri
     assert "/episode/ep-1?error=" in response.headers["location"]
     assert sb.store["cs_episodes"][0]["status"] == "video_approved"
     assert triggers == []
+    assert sb.store["cs_approvals"] == []
 
 
 def test_save_script_keeps_status_and_persists_edits(client, sb):

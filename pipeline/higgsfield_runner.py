@@ -5,6 +5,8 @@ from uuid import uuid4
 
 from pipeline.config import settings
 from pipeline.db import get_episode
+from pipeline.director import director
+
 
 # Canonical character reference IMAGES (docs/characters.md). Local paths — the
 # CLI auto-uploads them as typed media_inputs; MCP-era job IDs are rejected by
@@ -75,6 +77,7 @@ def run_cli(args: list) -> dict:
         ["higgsfield", *args, "--json"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(
@@ -137,15 +140,16 @@ def generate_block(sb, ep, idx: int) -> str:
             f"{scene}. Chunky voxel toy diorama visualizing this concept as a "
             "physical miniature scene, cube-built props, matte clay-plastic "
             "render, soft studio lighting, beige voxel tile platform, warm "
-            f"cream background, clean composition. {CHARACTER_LOCK} No text "
-            "anywhere in the image."
+            f"cream background, clean composition. {director.still_direction(shot)} "
+            f"{CHARACTER_LOCK} No text anywhere in the image."
         )
     else:
         still_prompt = (
             f"{scene}. Chunky voxel toy diorama, cube-built figures, matte "
             "clay-plastic render, soft studio lighting, beige voxel tile "
             "platform, warm cream background, clean centered composition, "
-            f"generous headroom. {CHARACTER_LOCK} No text anywhere in the image."
+            f"generous headroom. {director.still_direction(shot)} {CHARACTER_LOCK} "
+            "No text anywhere in the image."
         )
 
     def submit_still():
@@ -174,8 +178,8 @@ def generate_block(sb, ep, idx: int) -> str:
                 "generate", "create", CUTAWAY_JOB_TYPE,
                 "--prompt", (
                     f"Bring this concept diorama to life: {scene}. Gentle "
-                    "stop-motion toy animation, playful motion, slow camera "
-                    "push-in. No subtitles, no captions, no text on screen."
+                    f"stop-motion toy animation, {director.video_direction(shot, CUTAWAY_SECONDS)} "
+                    "No subtitles, no captions, no text on screen."
                 ),
                 "--start-image", str(still_path),
                 "--aspect_ratio", "9:16",
@@ -191,10 +195,9 @@ def generate_block(sb, ep, idx: int) -> str:
                     f'{CHAR_VOICE[speaker]}, speaking TO the audience, saying '
                     f'in Bahasa Melayu: "{line}". The character\'s mouth '
                     "movement matches the words; the other character reacts "
-                    "(nods, tilts, listens). Gentle stop-motion toy animation, "
-                    "subtle idle bobbing, slow camera push-in. Soft cheerful "
-                    "room ambience. No subtitles, no captions, no text on "
-                    "screen."
+                    f"(nods, tilts, listens). {director.video_direction(shot, TALK_SECONDS)} "
+                    "Soft cheerful room ambience. No subtitles, no captions, "
+                    "no text on screen."
                 ),
                 "--start-image", str(still_path),
                 "--aspect_ratio", "9:16",
@@ -289,7 +292,7 @@ def _video_size(path) -> tuple:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "v:0",
          "-show_entries", "stream=width,height", "-of", "csv=p=0", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout.strip().split(",")
     return int(out[0]), int(out[1])
 
@@ -298,7 +301,7 @@ def _video_duration(path) -> float:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
          "-of", "csv=p=0", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout.strip()
     return float(out)
 
@@ -307,7 +310,7 @@ def _has_audio(path) -> bool:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "a",
          "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout.strip()
     return bool(out)
 
@@ -363,13 +366,12 @@ def _download_asset(url: str, dest) -> None:
     with httpx.stream("GET", url, timeout=300, follow_redirects=True) as response:
         response.raise_for_status()
         with open(dest, "wb") as fh:
-            for chunk in response.iter_bytes():
-                fh.write(chunk)
+            fh.writelines(response.iter_bytes())
 
 
 def _ffmpeg(args: list) -> None:
     result = subprocess.run(
-        ["ffmpeg", "-y", *args], capture_output=True, text=True
+        ["ffmpeg", "-y", *args], capture_output=True, text=True, check=False
     )
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {result.stderr[-800:]}")

@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-import pipeline.claude_tasks as claude_tasks
+from pipeline import claude_tasks
 from pipeline.script_schema import ScriptValidationError
 
 
@@ -47,10 +47,14 @@ def _install_fake_client(monkeypatch, responses):
 
 VALID_SCRIPT = json.dumps([
     {
+        "shot": "talk",
+        "speaker": "naro",
         "narration_bm": "Naro tertanya-tanya apakah itu AI hari ini.",
         "visual": "Naro looking curious at Exa",
     },
     {
+        "shot": "talk",
+        "speaker": "exa",
         "narration_bm": "Exa menjawab dengan tenang dan mudah faham.",
         "visual": "Exa gesturing",
         "on_screen_text": "AI = Kecerdasan Buatan",

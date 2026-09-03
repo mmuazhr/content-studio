@@ -17,6 +17,7 @@ from pipeline.config import settings
 from pipeline.db import (
     IllegalTransition,
     _now,
+    check_transition,
     get_episode,
     list_episodes,
     next_ep_number,
@@ -69,17 +70,26 @@ def _redirect(path: str, *, msg: str = "", error: str = "") -> RedirectResponse:
 
 
 def _blocks_from_form(form) -> list:
-    """Rebuild script blocks from the parallel per-field lists the editor posts."""
+    """Rebuild script blocks from the parallel per-field lists the editor posts.
+
+    ``shot`` and ``speaker`` are included even though the current editor keeps
+    them read-only. Dropping either field would silently turn format-v3
+    dialogue/cutaway scripts into the legacy shape during approval.
+    """
     narrations = form.getlist("narration_bm")
     visuals = form.getlist("visual")
     on_screen = form.getlist("on_screen_text")
     sfx = form.getlist("sfx")
+    shots = form.getlist("shot")
+    speakers = form.getlist("speaker")
     return [
         {
             "narration_bm": narrations[i],
             "visual": visuals[i] if i < len(visuals) else "",
             "on_screen_text": on_screen[i] if i < len(on_screen) else "",
             "sfx": sfx[i] if i < len(sfx) else "",
+            "shot": shots[i] if i < len(shots) else "talk",
+            "speaker": speakers[i] if i < len(speakers) else "",
         }
         for i in range(len(narrations))
     ]
@@ -106,7 +116,7 @@ def _asset_src(ep: dict) -> str:
 
 
 @app.get("/")
-def queue(request: Request, sb=Depends(get_sb)):
+def queue(request: Request, sb=Depends(get_sb)):  # noqa: B008
     episodes = [e for e in list_episodes(sb) if e["status"] in QUEUE_STATUSES]
     episodes.sort(key=lambda e: (QUEUE_STATUSES.index(e["status"]), e.get("created_at") or ""))
     return templates.TemplateResponse(
@@ -115,7 +125,7 @@ def queue(request: Request, sb=Depends(get_sb)):
 
 
 @app.get("/episode/{episode_id}")
-def episode_detail(episode_id: str, request: Request, sb=Depends(get_sb)):
+def episode_detail(episode_id: str, request: Request, sb=Depends(get_sb)):  # noqa: B008
     ep = get_episode(sb, episode_id)
     if not ep:
         raise HTTPException(status_code=404, detail="episode not found")
@@ -125,7 +135,7 @@ def episode_detail(episode_id: str, request: Request, sb=Depends(get_sb)):
 
 
 @app.post("/episode/{episode_id}/script")
-async def save_script(episode_id: str, request: Request, sb=Depends(get_sb)):
+async def save_script(episode_id: str, request: Request, sb=Depends(get_sb)):  # noqa: B008
     form = await request.form()
     try:
         blocks = validate_script(_blocks_from_form(form))
@@ -142,7 +152,7 @@ async def decide(
     gate: str = Form(...),
     decision: str = Form(...),
     note: str = Form(""),
-    sb=Depends(get_sb),
+    sb=Depends(get_sb),  # noqa: B008
 ):
     if gate not in GATES or decision not in DECISIONS:
         raise HTTPException(status_code=400, detail=f"unknown gate/decision: {gate}/{decision}")
@@ -171,7 +181,7 @@ async def decide(
 
 
 @app.get("/api/status")
-def api_status(sb=Depends(get_sb)):
+def api_status(sb=Depends(get_sb)):  # noqa: B008
     """Live status feed polled by the frontend (5s): status + generation
     progress (done vs expected job slots) per episode."""
     episodes = []
@@ -191,14 +201,17 @@ def api_status(sb=Depends(get_sb)):
 async def _apply_decision(sb, ep, episode_id, gate, decision, note, edited):
     try:
         if decision == "reject":
+            check_transition(ep["status"], "rejected")
             record_approval(sb, episode_id, gate, "rejected", note=note)
             set_status(sb, episode_id, "rejected", rejection_note=note)
             return _redirect("/", msg=f"Rejected: {ep['title']}")
         if decision == "backlog":
+            check_transition(ep["status"], "backlog")
             record_approval(sb, episode_id, gate, "rejected", note=note)
             set_status(sb, episode_id, "backlog", rejection_note=note)
             return _redirect("/", msg=f"Backlogged: {ep['title']}")
         if gate == "video":
+            check_transition(ep["status"], "video_approved")
             record_approval(sb, episode_id, gate, "approved", note=note)
             set_status(sb, episode_id, "video_approved")
             return _redirect("/", msg=f"Video approved: {ep['title']}")
@@ -207,6 +220,7 @@ async def _apply_decision(sb, ep, episode_id, gate, decision, note, edited):
         ep_number = ep.get("ep_number")
         if ep_number is None:
             ep_number = next_ep_number(sb)
+        check_transition(ep["status"], "script_approved")
         record_approval(
             sb, episode_id, gate, "edited_then_approved" if edited else "approved", note=note
         )
@@ -218,7 +232,7 @@ async def _apply_decision(sb, ep, episode_id, gate, decision, note, edited):
 
 
 @app.post("/episode/{episode_id}/trigger")
-def retry_trigger(episode_id: str, sb=Depends(get_sb)):
+def retry_trigger(episode_id: str, sb=Depends(get_sb)):  # noqa: B008
     """Retry a failed hand-off. Safe to repeat: verify_approved skips non-approved episodes."""
     ep = get_episode(sb, episode_id)
     if not ep:
@@ -243,7 +257,7 @@ def _trigger_production(episode_id: str, title: str) -> RedirectResponse:
 
 
 @app.get("/history")
-def history(request: Request, sb=Depends(get_sb)):
+def history(request: Request, sb=Depends(get_sb)):  # noqa: B008
     episodes = list_episodes(sb)
     episodes.sort(key=lambda e: e.get("created_at") or "", reverse=True)
     runs = sb.table("cs_runs").select("*").order("started_at", desc=True).execute().data or []

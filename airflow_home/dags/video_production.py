@@ -1,9 +1,21 @@
+import os
+import sys
+from contextlib import contextmanager
+from pathlib import Path
+
+import pendulum
 from airflow.decorators import dag, task
 from airflow.exceptions import AirflowSkipException
 from airflow.operators.python import get_current_context
-from contextlib import contextmanager
-import pendulum, sys
-sys.path.insert(0, "/Users/muazhusaini/Documents/Project/content-studio")
+
+PROJECT_ROOT = Path(
+    os.getenv("CONTENT_STUDIO_ROOT", str(Path(__file__).resolve().parents[2]))
+).expanduser().resolve()
+if not (PROJECT_ROOT / "pipeline").is_dir():
+    raise RuntimeError(
+        f"content-studio root not found at {PROJECT_ROOT}; set CONTENT_STUDIO_ROOT"
+    )
+sys.path.insert(0, str(PROJECT_ROOT))
 
 DAG_ID = "video_production"
 
@@ -28,6 +40,7 @@ def _assembly_asset_url(assembly_job_id: str) -> str:
 
 def _download(url: str, ep: dict) -> str:
     import httpx
+
     from pipeline.config import settings
     ep_key = ep.get("ep_number")
     ep_key = f"ep{ep_key}" if ep_key is not None else ep["id"]
@@ -36,8 +49,7 @@ def _download(url: str, ep: dict) -> str:
     with httpx.stream("GET", url, timeout=300, follow_redirects=True) as response:
         response.raise_for_status()
         with open(target, "wb") as fh:
-            for chunk in response.iter_bytes():
-                fh.write(chunk)
+            fh.writelines(response.iter_bytes())
     return str(target)
 
 
@@ -54,31 +66,36 @@ def video_production():
             raise ValueError("dag_run.conf must supply episode_id")
         sb = settings.supabase()
         ep = get_episode(sb, episode_id)
+        if not ep:
+            raise ValueError(f"episode {episode_id} not found")
         if ep["status"] != "script_approved":
             # Not an episode error — a redundant trigger. Spend nothing, touch nothing.
             raise AirflowSkipException(
                 f"episode {episode_id} is {ep['status']}, not script_approved"
             )
-        run_id = record_run(sb, DAG_ID, ctx["run_id"], episode_id=episode_id)
         with _episode_guard(sb, episode_id):
+            from pipeline.script_schema import validate_script
+
+            validate_script(ep.get("script") or [])
             set_status(sb, episode_id, "generating")
+            run_id = record_run(sb, DAG_ID, ctx["run_id"], episode_id=episode_id)
         return {"episode_id": episode_id, "run_id": run_id}
 
     @task
     def narration(ref: dict) -> dict:
         from pipeline.config import settings
         from pipeline.db import get_episode
-        from pipeline.higgsfield_runner import generate_narration
         sb = settings.supabase()
         with _episode_guard(sb, ref["episode_id"]):
             ep = get_episode(sb, ref["episode_id"])
             talk_blocks = [b for b in ep["script"] if b.get("shot", "talk") == "talk"]
-            if talk_blocks and all(b.get("speaker") for b in talk_blocks):
-                # Talking-character mode (format v3): dialogue audio comes from
-                # the video model itself — no narrator TTS needed. Cutaway
-                # blocks are silent by design.
+            if not talk_blocks:
                 return ref
-            generate_narration(sb, ep)
+            if not all(b.get("speaker") for b in talk_blocks):
+                raise ValueError("every talk block must declare naro or exa as speaker")
+            # Talking-character mode (format v3): dialogue audio comes from
+            # the video model itself — no narrator TTS needed. Cutaway blocks
+            # are silent by design.
         return ref
 
     @task
@@ -105,8 +122,8 @@ def video_production():
 
     @task
     def deliver(ref: dict) -> str:
-        from pipeline.config import settings
         from pipeline.claude_tasks import write_caption
+        from pipeline.config import settings
         from pipeline.db import finish_run, get_episode, set_status
         sb = settings.supabase()
         episode_id = ref["episode_id"]

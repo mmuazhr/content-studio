@@ -72,7 +72,7 @@ approval. Nothing goes public in slice 1.
 | `title` | text | |
 | `topic_summary` | text | 1–2 sentence angle/hook rationale |
 | `episode_type` | enum | `explainer` \| `intro` \| `promo` |
-| `script` | jsonb | array of blocks: `{narration_bm, visual, on_screen_text, sfx}` |
+| `script` | jsonb | array of v3 blocks: `{shot, speaker, narration_bm, visual, on_screen_text, sfx}` |
 | `status` | enum | see lifecycle below |
 | `rejection_note` | text, nullable | feeds next research run |
 | `video_url` | text, nullable | final asset URL |
