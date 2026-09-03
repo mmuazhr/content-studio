@@ -23,6 +23,8 @@ EP00_SUMMARY = (
 )
 EP00_SCRIPT = [
     {
+        "shot": "talk",
+        "speaker": "naro",
         "narration_bm": (
             "Korang selalu dengar orang cakap pasal AI... tapi tak berapa "
             "faham benda tu sebenarnya apa?"
@@ -37,6 +39,8 @@ EP00_SCRIPT = [
         "sfx": 'Soft lo-fi/chiptune bed, "pop" when Exa slides in.',
     },
     {
+        "shot": "talk",
+        "speaker": "exa",
         "narration_bm": (
             "Kenalkan — Naro dan Exa! Setiap minggu kitorang terangkan AI dalam "
             "Bahasa Melayu. Simple, santai, takde jargon. Jom belajar sama-sama!"
@@ -55,12 +59,16 @@ FAKE_TITLE = "FAKE dry-run probe"
 FAKE_SUMMARY = "Synthetic episode used to rehearse video_production under DRY_RUN=1."
 FAKE_SCRIPT = [
     {
+        "shot": "talk",
+        "speaker": "naro",
         "narration_bm": "Blok satu untuk ujian dry-run sahaja.",
         "visual": "Naro waves on the voxel platform.",
         "on_screen_text": "",
         "sfx": "",
     },
     {
+        "shot": "talk",
+        "speaker": "exa",
         "narration_bm": "Blok dua untuk ujian dry-run sahaja.",
         "visual": "Exa presents the laptop.",
         "on_screen_text": "",

@@ -8,7 +8,7 @@ your review.
 ## Start the stack (if not already running)
 
 ```bash
-cd ~/Documents/Project/content-studio
+cd /path/to/content-studio
 sh scripts/start-airflow.sh          # Airflow UI: http://localhost:8080 (user: admin,
                                      #   password: airflow_home/standalone_admin_password.txt)
 .venv/bin/uvicorn dashboard.app:app --port 8600   # Dashboard: http://localhost:8600

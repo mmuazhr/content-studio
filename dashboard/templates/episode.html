@@ -49,9 +49,23 @@
   {% for block in ep.script %}
   <div class="block">
     <h4>Block {{ loop.index }}</h4>
+    {% if ep.status == 'pending_script_review' %}
+    <label>Shot</label>
+    <select name="shot">
+      <option value="talk" {% if block.get('shot', 'talk') == 'talk' %}selected{% endif %}>Talk</option>
+      <option value="cutaway" {% if block.get('shot', 'talk') == 'cutaway' %}selected{% endif %}>Cutaway</option>
+    </select>
+    <label>Speaker</label>
+    <select name="speaker">
+      <option value="" {% if not block.get('speaker') %}selected{% endif %}>Cutaway / choose if talk</option>
+      <option value="naro" {% if block.get('speaker') == 'naro' %}selected{% endif %}>Naro</option>
+      <option value="exa" {% if block.get('speaker') == 'exa' %}selected{% endif %}>Exa</option>
+    </select>
+    {% else %}
     <p class="cs-note">Shot: <code>{{ block.get('shot', 'talk') }}</code> · Speaker: <code>{{ block.get('speaker') or 'off-screen' }}</code></p>
     <input type="hidden" name="shot" value="{{ block.get('shot', 'talk') }}" />
     <input type="hidden" name="speaker" value="{{ block.get('speaker', '') }}" />
+    {% endif %}
     <label>Narration (BM)</label>
     <textarea name="narration_bm" rows="3" {% if ep.status != 'pending_script_review' %}readonly{% endif %}>{{ block.narration_bm }}</textarea>
     <label>Visual</label>

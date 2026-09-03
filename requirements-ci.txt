@@ -1,0 +1,11 @@
+# Lightweight dependencies for the test suite and CI. Airflow stays in the
+# runtime requirements because it needs platform-specific constraints.
+anthropic
+fastapi
+httpx
+jinja2
+pytest
+python-dotenv
+python-multipart
+ruff
+supabase

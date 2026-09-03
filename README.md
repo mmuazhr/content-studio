@@ -43,6 +43,10 @@ cp .env.example .env   # fill in Supabase, Anthropic, Airflow, Higgsfield creds
 # or via AIRFLOW_API_URL from the dashboard
 ```
 
+The DAGs resolve the repository from their own location. `scripts/start-airflow.sh`
+also exports `CONTENT_STUDIO_ROOT` so the same DAGs work when Airflow is pointed
+at a copied DAG directory.
+
 Set `DRY_RUN=1` (default) to stub Higgsfield calls with no credit spend;
 `DRY_RUN=0` goes live.
 
@@ -50,7 +54,7 @@ Set `DRY_RUN=1` (default) to stub Higgsfield calls with no credit spend;
 
 ```
 content-studio/
-├─ pipeline/          claude_tasks.py · higgsfield_runner.py · db.py · script_schema.py
+├─ pipeline/          claude_tasks.py · director.py · higgsfield_runner.py · db.py · script_schema.py
 ├─ dashboard/          FastAPI approval UI (app.py)
 ├─ airflow_home/dags/  topic_research.py · video_production.py
 ├─ assets/             episodes/ (final cuts) · mascot-concepts/
@@ -65,5 +69,10 @@ content-studio/
 ./.venv/bin/pytest
 ```
 
+CI uses [`requirements-ci.txt`](requirements-ci.txt) for the lightweight test
+dependencies; Airflow remains in `requirements.txt` for local execution.
+
 Covers Claude task generation, script schema validation, DB state
 transitions, the Higgsfield runner, and the dashboard.
+
+The shared directorial brief is documented in [`docs/director.md`](docs/director.md).

@@ -255,7 +255,8 @@ label {
 }
 
 textarea,
-input[type="text"] {
+input[type="text"],
+select {
   width: 100%;
   box-sizing: border-box;
   font-family: "Courier New", monospace;

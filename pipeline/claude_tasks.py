@@ -6,7 +6,8 @@ import subprocess
 import anthropic
 
 from pipeline.config import settings
-from pipeline.script_schema import validate_script, ScriptValidationError
+from pipeline.director import DIRECTOR_SCRIPT_GUIDANCE
+from pipeline.script_schema import ScriptValidationError, validate_script
 
 MODEL = "claude-sonnet-5"
 # CLI fallback rides the user's Claude subscription (no API key needed).
@@ -73,6 +74,7 @@ def _call_cli(cli: str, prompt: str) -> str:
         capture_output=True,
         text=True,
         timeout=300,
+        check=False,
         env=env,
     )
     if result.returncode != 0:
@@ -97,7 +99,7 @@ def _call_with_retry(prompt: str, parse_fn, max_tokens: int = 2000):
     text = _call(prompt, max_tokens=max_tokens)
     try:
         return parse_fn(text)
-    except Exception as exc:
+    except ValueError as exc:
         retry_prompt = (
             f"{prompt}\n\nYour previous response could not be parsed "
             f"({exc}). Respond again with ONLY valid JSON, no other text."
@@ -131,6 +133,7 @@ def propose_topics(past_titles: list, rejection_notes: list, n: int = 3) -> list
 def draft_script(title: str, topic_summary: str) -> list:
     prompt = (
         f"{CHARACTER_BRIEF}\n\n"
+        f"{DIRECTOR_SCRIPT_GUIDANCE}\n\n"
         f"Episode title: {title}\n"
         f"Topic summary: {topic_summary}\n\n"
         "Write the script as a JSON array of 3-5 blocks. Each block is an "
