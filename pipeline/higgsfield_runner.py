@@ -77,6 +77,7 @@ def run_cli(args: list) -> dict:
         ["higgsfield", *args, "--json"],
         capture_output=True,
         text=True,
+        check=False,
     )
     if result.returncode != 0:
         raise RuntimeError(
@@ -291,7 +292,7 @@ def _video_size(path) -> tuple:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "v:0",
          "-show_entries", "stream=width,height", "-of", "csv=p=0", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout.strip().split(",")
     return int(out[0]), int(out[1])
 
@@ -300,7 +301,7 @@ def _video_duration(path) -> float:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-show_entries", "format=duration",
          "-of", "csv=p=0", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout.strip()
     return float(out)
 
@@ -309,7 +310,7 @@ def _has_audio(path) -> bool:
     out = subprocess.run(
         ["ffprobe", "-v", "error", "-select_streams", "a",
          "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(path)],
-        capture_output=True, text=True,
+        capture_output=True, text=True, check=False,
     ).stdout.strip()
     return bool(out)
 
@@ -365,13 +366,12 @@ def _download_asset(url: str, dest) -> None:
     with httpx.stream("GET", url, timeout=300, follow_redirects=True) as response:
         response.raise_for_status()
         with open(dest, "wb") as fh:
-            for chunk in response.iter_bytes():
-                fh.write(chunk)
+            fh.writelines(response.iter_bytes())
 
 
 def _ffmpeg(args: list) -> None:
     result = subprocess.run(
-        ["ffmpeg", "-y", *args], capture_output=True, text=True
+        ["ffmpeg", "-y", *args], capture_output=True, text=True, check=False
     )
     if result.returncode != 0:
         raise RuntimeError(f"ffmpeg failed: {result.stderr[-800:]}")

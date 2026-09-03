@@ -9,6 +9,7 @@ set -e
 cd "$(dirname "$0")/.."
 
 export AIRFLOW_HOME="$PWD/airflow_home"
+export CONTENT_STUDIO_ROOT="$PWD"
 export OS_ACTIVITY_MODE=disable
 export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES
 export NO_PROXY="*"

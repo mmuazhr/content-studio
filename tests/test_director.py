@@ -40,7 +40,8 @@ def test_draft_script_includes_the_director_pass(monkeypatch):
     def fake_retry(prompt, parse_fn, max_tokens=2000):
         captured["prompt"] = prompt
         return parse_fn(
-            '[{"narration_bm": "Naro menerangkan satu perkara mudah hari ini.", '
+            '[{"shot": "talk", "speaker": "naro", '
+            '"narration_bm": "Naro menerangkan satu perkara mudah hari ini.", '
             '"visual": "Naro points at a practical prop."}]'
         )
 

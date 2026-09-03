@@ -43,6 +43,10 @@ cp .env.example .env   # fill in Supabase, Anthropic, Airflow, Higgsfield creds
 # or via AIRFLOW_API_URL from the dashboard
 ```
 
+The DAGs resolve the repository from their own location. `scripts/start-airflow.sh`
+also exports `CONTENT_STUDIO_ROOT` so the same DAGs work when Airflow is pointed
+at a copied DAG directory.
+
 Set `DRY_RUN=1` (default) to stub Higgsfield calls with no credit spend;
 `DRY_RUN=0` goes live.
 
@@ -64,6 +68,9 @@ content-studio/
 ```bash
 ./.venv/bin/pytest
 ```
+
+CI uses [`requirements-ci.txt`](requirements-ci.txt) for the lightweight test
+dependencies; Airflow remains in `requirements.txt` for local execution.
 
 Covers Claude task generation, script schema validation, DB state
 transitions, the Higgsfield runner, and the dashboard.

@@ -34,3 +34,10 @@ not make a short episode confusing.
 To change the channel's visual grammar, edit the brief and the two shot plans
 together, then run the full test suite before producing new credits-consuming
 assets.
+
+## Script format migration
+
+The production preflight now requires v3 storyboard metadata: every `talk`
+block must name `naro` or `exa`, and every `cutaway` block must omit a speaker.
+Legacy drafts fail safely before asset generation; assign the shot and speaker
+in the dashboard before approving them.

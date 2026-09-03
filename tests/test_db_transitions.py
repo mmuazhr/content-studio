@@ -1,6 +1,8 @@
+from itertools import pairwise
+
 import pytest
 
-from pipeline.db import check_transition, IllegalTransition
+from pipeline.db import IllegalTransition, check_transition
 
 
 def test_legal_full_chain_passes():
@@ -9,7 +11,7 @@ def test_legal_full_chain_passes():
         "generating", "pending_video_review", "video_approved",
         "posted", "archived",
     ]
-    for cur, new in zip(chain, chain[1:]):
+    for cur, new in pairwise(chain):
         check_transition(cur, new)  # should not raise
 
 

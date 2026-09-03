@@ -74,6 +74,7 @@ def _call_cli(cli: str, prompt: str) -> str:
         capture_output=True,
         text=True,
         timeout=300,
+        check=False,
         env=env,
     )
     if result.returncode != 0:
@@ -98,7 +99,7 @@ def _call_with_retry(prompt: str, parse_fn, max_tokens: int = 2000):
     text = _call(prompt, max_tokens=max_tokens)
     try:
         return parse_fn(text)
-    except Exception as exc:
+    except ValueError as exc:
         retry_prompt = (
             f"{prompt}\n\nYour previous response could not be parsed "
             f"({exc}). Respond again with ONLY valid JSON, no other text."
