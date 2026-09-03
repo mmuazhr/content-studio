@@ -6,7 +6,8 @@ import subprocess
 import anthropic
 
 from pipeline.config import settings
-from pipeline.script_schema import validate_script, ScriptValidationError
+from pipeline.director import DIRECTOR_SCRIPT_GUIDANCE
+from pipeline.script_schema import ScriptValidationError, validate_script
 
 MODEL = "claude-sonnet-5"
 # CLI fallback rides the user's Claude subscription (no API key needed).
@@ -131,6 +132,7 @@ def propose_topics(past_titles: list, rejection_notes: list, n: int = 3) -> list
 def draft_script(title: str, topic_summary: str) -> list:
     prompt = (
         f"{CHARACTER_BRIEF}\n\n"
+        f"{DIRECTOR_SCRIPT_GUIDANCE}\n\n"
         f"Episode title: {title}\n"
         f"Topic summary: {topic_summary}\n\n"
         "Write the script as a JSON array of 3-5 blocks. Each block is an "

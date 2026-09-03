@@ -50,7 +50,7 @@ Set `DRY_RUN=1` (default) to stub Higgsfield calls with no credit spend;
 
 ```
 content-studio/
-├─ pipeline/          claude_tasks.py · higgsfield_runner.py · db.py · script_schema.py
+├─ pipeline/          claude_tasks.py · director.py · higgsfield_runner.py · db.py · script_schema.py
 ├─ dashboard/          FastAPI approval UI (app.py)
 ├─ airflow_home/dags/  topic_research.py · video_production.py
 ├─ assets/             episodes/ (final cuts) · mascot-concepts/
@@ -67,3 +67,5 @@ content-studio/
 
 Covers Claude task generation, script schema validation, DB state
 transitions, the Higgsfield runner, and the dashboard.
+
+The shared directorial brief is documented in [`docs/director.md`](docs/director.md).
